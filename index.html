@@ -174,102 +174,104 @@ function getCounts(sel,emblems){const c={};REGIONS.forEach(r=>{c[r.id]=0;});sel.
 function getActive(counts){return REGIONS.filter(r=>counts[r.id]>=r.min).map(r=>r.id);}
 function combs(arr,k){if(k===0)return[[]];if(arr.length<k)return[];const[f,...rest]=arr;return[...combs(rest,k-1).map(c=>[f,...c]),...combs(rest,k)];}
 
-// Joint DFS optimizer: considers multi-region champs filling multiple gaps at once.
-// Runs two separate DFS passes: one for min-gold, one for min-champs.
-function findPicks(regionIds,counts,excludeIds,maxG){
+// Greedy solver: fast, no DFS, handles multi-region champs.
+// For each region combo, pick champs that cover the most gaps first (greedy).
+function greedySolve(regionIds, counts, excludeIds, maxG){
   const gaps={};
-  regionIds.forEach(rid=>{const have=counts[rid]||0;gaps[rid]=Math.max(0,(regMap[rid]?.min||1)-have);});
-  if(Object.values(gaps).every(v=>v===0))return{byGold:{picks:[],cost:0,cc:0},byChamp:{picks:[],cost:0,cc:0}};
-  const base=CHAMPS.filter(c=>!excludeIds.has(c.id)&&c.r.some(rid=>gaps[rid]>0));
-  if(!base.length)return null;
-  // DFS 1: min gold — sort cheapest first, prune by gold
-  let bestG=null;
-  {const cands=[...base].sort((a,b)=>a.c-b.c);
-  function dfsG(i,rem,picks,cost){
-    const rt=Object.values(rem).reduce((s,v)=>s+v,0);
-    if(rt<=0){const cc=picks.length;if(!bestG||cost<bestG.cost||(cost===bestG.cost&&cc<bestG.cc))bestG={picks:[...picks],cost,cc};return;}
-    if(i>=cands.length)return;
-    if(bestG&&cost+rt*cands[i].c>=bestG.cost)return;
-    if(maxG<99&&cost+cands[i].c>maxG)return;
-    const ch=cands[i];const ng={...rem};ch.r.forEach(rid=>{if(ng[rid]>0)ng[rid]--;});
-    picks.push(ch);dfsG(i+1,ng,picks,cost+ch.c);picks.pop();
-    dfsG(i+1,rem,picks,cost);
+  regionIds.forEach(rid=>{
+    const have=counts[rid]||0;
+    gaps[rid]=Math.max(0,(regMap[rid]?.min||1)-have);
+  });
+  if(Object.values(gaps).every(v=>v===0)) return{picks:[],cost:0,cc:0};
+  // Sort candidates: multi-region champs covering most gaps first, then by cost
+  const cands=CHAMPS
+    .filter(c=>!excludeIds.has(c.id)&&c.r.some(rid=>gaps[rid]>0))
+    .sort((a,b)=>{
+      const ca=a.r.filter(r=>gaps[r]>0).length;
+      const cb=b.r.filter(r=>gaps[r]>0).length;
+      return cb-ca||a.c-b.c;
+    });
+  const rem={...gaps};const picks=[];
+  for(const ch of cands){
+    if(Object.values(rem).every(v=>v<=0)) break;
+    if(ch.r.some(rid=>rem[rid]>0)){
+      picks.push(ch);
+      ch.r.forEach(rid=>{if(rem[rid]>0) rem[rid]--;});
+    }
   }
-  dfsG(0,{...gaps},[],0);}
-  // DFS 2: min champs — sort by most gaps covered first, prune by champ count
-  let bestC=null;
-  {const cands=[...base].sort((a,b)=>{const ca=a.r.filter(r=>gaps[r]>0).length,cb=b.r.filter(r=>gaps[r]>0).length;return cb-ca||a.c-b.c;});
-  function dfsC(i,rem,picks,cost){
-    const rt=Object.values(rem).reduce((s,v)=>s+v,0);
-    if(rt<=0){const cc=picks.length;if(!bestC||cc<bestC.cc||(cc===bestC.cc&&cost<bestC.cost))bestC={picks:[...picks],cost,cc};return;}
-    if(i>=cands.length)return;
-    if(bestC&&picks.length>=bestC.cc)return;
-    if(maxG<99&&cost+cands[i].c>maxG)return;
-    const ch=cands[i];const ng={...rem};ch.r.forEach(rid=>{if(ng[rid]>0)ng[rid]--;});
-    picks.push(ch);dfsC(i+1,ng,picks,cost+ch.c);picks.pop();
-    dfsC(i+1,rem,picks,cost);
-  }
-  dfsC(0,{...gaps},[],0);}
-  return bestG?{byGold:bestG,byChamp:bestC||bestG}:null;
+  if(!Object.values(rem).every(v=>v<=0)) return null; // can't satisfy
+  const cost=picks.reduce((s,p)=>s+p.c,0);
+  if(maxG<99&&cost>maxG) return null;
+  return{picks,cost,cc:picks.length};
 }
-// Flatten picks back into a parts-like array (one entry per region combo)
-function makeParts(picks,regionIds){
-  // Group by primary region for display
-  const m={};regionIds.forEach(rid=>{m[rid]=[];});
-  picks.forEach(ch=>{const match=ch.r.find(rid=>regionIds.includes(rid));if(match)m[match].push(ch);});
-  return regionIds.map(rid=>({region:regMap[rid],picks:m[rid]||[]}));
+// Also compute a gold-optimized variant: sort cheapest first within same coverage
+function greedySolveGold(regionIds, counts, excludeIds, maxG){
+  const gaps={};
+  regionIds.forEach(rid=>{
+    const have=counts[rid]||0;
+    gaps[rid]=Math.max(0,(regMap[rid]?.min||1)-have);
+  });
+  if(Object.values(gaps).every(v=>v===0)) return{picks:[],cost:0,cc:0};
+  const rem={...gaps};const picks=[];
+  // Pass 1: multi-region champs sorted cheapest
+  const multi=CHAMPS
+    .filter(c=>!excludeIds.has(c.id)&&c.r.filter(rid=>gaps[rid]>0).length>1)
+    .sort((a,b)=>a.c-b.c);
+  for(const ch of multi){
+    if(ch.r.some(rid=>rem[rid]>0)){
+      picks.push(ch);
+      ch.r.forEach(rid=>{if(rem[rid]>0) rem[rid]--;});
+    }
+  }
+  // Pass 2: fill remaining gaps cheapest first
+  for(const rid of regionIds){
+    let need=rem[rid]||0;
+    if(need<=0) continue;
+    const fill=CHAMPS
+      .filter(c=>!excludeIds.has(c.id)&&!picks.includes(c)&&c.r.includes(rid))
+      .sort((a,b)=>a.c-b.c);
+    for(const ch of fill){
+      if(need<=0) break;
+      picks.push(ch); need--;
+      ch.r.forEach(r=>{if(rem[r]>0) rem[r]--;});
+    }
+    if(need>0) return null;
+  }
+  const cost=picks.reduce((s,p)=>s+p.c,0);
+  if(maxG<99&&cost>maxG) return null;
+  return{picks,cost,cc:picks.length};
+}
+function makeParts(picks,rids){
+  const m={};rids.forEach(rid=>{m[rid]=[];});
+  picks.forEach(ch=>{const match=ch.r.find(rid=>rids.includes(rid));if(match&&!m[match].includes(ch))m[match].push(ch);});
+  return rids.map(rid=>({region:regMap[rid],picks:m[rid]||[]}));
+}
+function buildRows(combos, counts, excludeIds, maxG){
+  const seenG=new Set(), seenC=new Set();
+  const byGold=[], byChamp=[];
+  for(const rids of combos){
+    const g=greedySolveGold(rids,counts,excludeIds,maxG);
+    const c=greedySolve(rids,counts,excludeIds,maxG);
+    if(g){const k=g.picks.map(x=>x.id).sort().join(',');if(!seenG.has(k)){seenG.add(k);byGold.push({picks:g.picks,parts:makeParts(g.picks,rids),total:g.cost,cc:g.cc,regions:rids});}}
+    if(c){const k=c.picks.map(x=>x.id).sort().join(',');if(!seenC.has(k)){seenC.add(k);byChamp.push({picks:c.picks,parts:makeParts(c.picks,rids),total:c.cost,cc:c.cc,regions:rids});}}
+  }
+  byGold.sort((a,b)=>a.total-b.total||a.cc-b.cc);
+  byChamp.sort((a,b)=>a.cc-b.cc||a.total-b.total);
+  return{byGold:byGold.slice(0,8),byChamp:byChamp.slice(0,8)};
 }
 function analyze(sel,emblems,maxG){
   const counts=getCounts(sel,emblems);const active=getActive(counts);
   if(active.length>=4)return{done:true,active,counts};
-  const need=4-active.length;const notActive=REGIONS.filter(r=>!active.includes(r.id));
-  const rawG=[],rawC=[];
-  combs(notActive,need).forEach(combo=>{
-    const rids=combo.map(r=>r.id);
-    const res=findPicks(rids,counts,sel,maxG);
-    if(!res)return;
-    rawG.push({picks:res.byGold.picks,parts:makeParts(res.byGold.picks,rids),total:res.byGold.cost,cc:res.byGold.cc,regions:rids});
-    if(res.byChamp!==res.byGold)rawC.push({picks:res.byChamp.picks,parts:makeParts(res.byChamp.picks,rids),total:res.byChamp.cost,cc:res.byChamp.cc,regions:rids});
-  });
-  // Merge and deduplicate by picks signature
-  const seen=new Set();
-  const dedup=arr=>arr.filter(r=>{const k=r.picks.map(c=>c.id).sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
-  const byGold=dedup(rawG.sort((a,b)=>a.total-b.total||a.cc-b.cc)).slice(0,8);
-  seen.clear();
-  const byChamp=dedup([...rawG,...rawC].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
-  return{done:false,active,counts,need,suggsGold:byGold,suggsChamp:byChamp};
-}
-// globalOpt: fast greedy per region (no DFS) — O(495 * n)
-function greedyForRegion(rid,excludeIds){
-  const reg=regMap[rid];
-  const avail=CHAMPS.filter(c=>!excludeIds.has(c.id)&&c.r.includes(rid)).sort((a,b)=>a.c-b.c);
-  if(avail.length<reg.min)return null;
-  const picks=avail.slice(0,reg.min);
-  return{picks,cost:picks.reduce((s,p)=>s+p.c,0),cc:picks.length};
+  const need=4-active.length;
+  const notActive=REGIONS.filter(r=>!active.includes(r.id));
+  const combos=combs(notActive,need).map(c=>c.map(r=>r.id));
+  const res=buildRows(combos,counts,sel,maxG);
+  return{done:false,active,counts,need,suggsGold:res.byGold,suggsChamp:res.byChamp};
 }
 function globalOpt(maxG){
-  // Precompute cheapest picks per region (greedy, ignore multi-region overlap)
-  const rc={};
-  REGIONS.forEach(r=>{rc[r.id]=greedyForRegion(r.id,new Set());});
-  const viable=REGIONS.filter(r=>rc[r.id]!==null);
-  const rawG=[],rawC=[];
-  combs(viable,4).forEach(combo=>{
-    const parts=combo.map(r=>rc[r.id]);
-    // Dedupe: if a champ appears in multiple regions, count once
-    const seen=new Set();const allPicks=[];
-    parts.forEach(p=>p.picks.forEach(ch=>{if(!seen.has(ch.id)){seen.add(ch.id);allPicks.push(ch);}}));
-    const total=allPicks.reduce((s,c)=>s+c.c,0);
-    const cc=allPicks.length;
-    if(maxG<99&&total>maxG)return;
-    const rids=combo.map(r=>r.id);
-    rawG.push({picks:allPicks,parts:makeParts(allPicks,rids),total,cc,regions:rids});
-  });
-  const seen=new Set();
-  const dedup=arr=>arr.filter(r=>{const k=r.picks.map(c=>c.id).sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
-  const byGold=dedup([...rawG].sort((a,b)=>a.total-b.total||a.cc-b.cc)).slice(0,8);
-  seen.clear();
-  const byChamp=dedup([...rawG].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
-  return{byGold,byChamp};
+  const emptyCounts={};REGIONS.forEach(r=>{emptyCounts[r.id]=0;});
+  const combos=combs(REGIONS,4).map(c=>c.map(r=>r.id));
+  return buildRows(combos,emptyCounts,new Set(),maxG);
 }
 function ChampImg({id,size,radius}){
   const[err,setErr]=useState(false);const[err2,setErr2]=useState(false);const url=DM[id]?DDR+DM[id]+".png":null;const url2=!url&&TM[id]?TDR+TM[id]+".png":null;
