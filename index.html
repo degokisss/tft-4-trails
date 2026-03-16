@@ -147,9 +147,9 @@ const REGIONS=[
   {id:"Ixtal",en:"Ixtal",vi:"Ixtal",icon:"🌿",min:3,color:"#6ee7b7",bg:"rgba(110,231,183,.13)",bd:"rgba(110,231,183,.42)"},
   {id:"Noxus",en:"Noxus",vi:"Noxus",icon:"⚔️",min:3,color:"#fca5a5",bg:"rgba(252,165,165,.13)",bd:"rgba(252,165,165,.42)"},
   {id:"Piltover",en:"Piltover",vi:"Piltover",icon:"⚙️",min:2,color:"#67e8f9",bg:"rgba(103,232,249,.13)",bd:"rgba(103,232,249,.42)"},
-  {id:"Shadow Isles",en:"Shadow Isles",vi:"Đ. Bóng Đêm",icon:"💀",min:2,color:"#c4b5fd",bg:"rgba(196,181,253,.13)",bd:"rgba(196,181,253,.42)"},
-  {id:"Shurima",en:"Shurima",vi:"Shurima",icon:"☀️",min:2,color:"#fcd34d",bg:"rgba(252,211,77,.13)",bd:"rgba(252,211,77,.42)"},
-  {id:"Targon",en:"Targon",vi:"Targon",icon:"⭐",min:1,color:"#e2e8f0",bg:"rgba(226,232,240,.09)",bd:"rgba(226,232,240,.32)"},
+  {id:"Shadow Isles",en:"Shadow Isles",vi:"Đ. Bóng Đêm",icon:"💀",min:2,color:"#c4b5fd",bg:"rgba(196,181,253,.13)",bd:"rgba(196,181,253,.42)",noEmb:1},
+  {id:"Shurima",en:"Shurima",vi:"Shurima",icon:"☀️",min:2,color:"#fcd34d",bg:"rgba(252,211,77,.13)",bd:"rgba(252,211,77,.42)",noEmb:1},
+  {id:"Targon",en:"Targon",vi:"Targon",icon:"⭐",min:1,color:"#e2e8f0",bg:"rgba(226,232,240,.09)",bd:"rgba(226,232,240,.32)",noEmb:1},
   {id:"Void",en:"Void",vi:"Hư Không",icon:"👁️",min:2,color:"#a78bfa",bg:"rgba(167,139,250,.13)",bd:"rgba(167,139,250,.42)"}
 ];
 const regMap=Object.fromEntries(REGIONS.map(r=>[r.id,r]));
@@ -253,7 +253,7 @@ function App(){
     h(BoardView,{sel,counts,active,lang}),
     h("div",{className:"layout"},
       h("div",null,
-        h("div",{className:"card mb10"},h("div",{className:"card-ttl"},t.emblems),h("div",{className:"emb-grid"},REGIONS.map(r=>{const on=emblems.has(r.id);return h("button",{key:r.id,className:"eb"+(on?" on":""),style:{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd},onClick:()=>toggleE(r.id)},h("span",{className:"eb-icon",style:{"--pbg":r.bg,"--pbd":r.bd}},r.icon),(lang==="vi"?t.empfx:"")+rname(r));}))),
+        h("div",{className:"card mb10"},h("div",{className:"card-ttl"},t.emblems),h("div",{className:"emb-grid"},REGIONS.filter(r=>!r.noEmb).map(r=>{const on=emblems.has(r.id);return h("button",{key:r.id,className:"eb"+(on?" on":""),style:{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd},onClick:()=>toggleE(r.id)},h("span",{className:"eb-icon",style:{"--pbg":r.bg,"--pbd":r.bd}},r.icon),(lang==="vi"?t.empfx:"")+rname(r));}))),
         h("div",{className:"gf mb10"},h("div",{className:"gf-top"},h("span",{className:"gf-lbl"},t.goldFilter),h("span",{className:"gf-val"},maxG>=99?t.goldAll:"≤"+maxG+"g")),h("div",{className:"gf-btns"},GOLDS.map(g=>h("button",{key:g,className:"gfb"+(maxG===g?" on":""),onClick:()=>setMaxG(g)},g>=99?t.goldAll:"≤"+g+"g")))),
         h("div",{className:"opt-board"},
           h("div",{className:"card-ttl"},t.optTitle),
