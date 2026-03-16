@@ -311,6 +311,22 @@ function BoardView({sel,counts,active,lang}){
     )
   );
 }
+function StarIcon(){
+  return h("svg",{width:13,height:13,viewBox:"0 0 16 16",fill:"var(--w)",style:{flexShrink:0}},
+    h("path",{d:"M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.873 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"})
+  );
+}
+function StarCount(){
+  const[count,setCount]=useState(null);
+  useEffect(()=>{
+    fetch("https://api.github.com/repos/degokisss/tft-4-trails")
+      .then(r=>r.json())
+      .then(d=>setCount(d.stargazers_count))
+      .catch(()=>{});
+  },[]);
+  if(count===null)return null;
+  return h("span",{style:{background:"rgba(255,255,255,.08)",borderRadius:10,padding:"1px 6px",fontSize:10}},count);
+}
 function App(){
   const[lang,setLang]=useState("vi");const[sel,setSel]=useState(new Set());const[emblems,setEmblems]=useState(new Map());
   const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);const[sortMode,setSortMode]=useState("gold");
@@ -333,7 +349,7 @@ function App(){
       h("div",{className:"hdr-l"},h("div",{className:"hdr-icon"},"⚡"),h("div",null,h("div",{className:"hdr-h1"},t.title),h("div",{className:"hdr-sub"},t.sub))),
       h("div",{className:"hdr-r"},
         h("div",{className:"xp-badge "+(active.length>=4?"xp-on":"xp-off")},active.length>=4?t.xpOn:t.xpOff(active.length)),
-        h("div",{className:"lang-btn"},h("button",{className:"lo"+(lang==="vi"?" on":""),onClick:()=>setLang("vi")},"VI"),h("button",{className:"lo"+(lang==="en"?" on":""),onClick:()=>setLang("en")},"EN"))
+        h("div",{className:"lang-btn"},h("button",{className:"lo"+(lang==="vi"?" on":""),onClick:()=>setLang("vi")},"VI"),h("button",{className:"lo"+(lang==="en"?" on":""),onClick:()=>setLang("en")},"EN")),h("a",{href:"https://github.com/degokisss/tft-4-trails",target:"_blank",rel:"noopener noreferrer",style:{display:"inline-flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:20,border:".5px solid rgba(255,255,255,.13)",background:"rgba(255,255,255,.04)",color:"var(--tx2)",fontSize:11,fontWeight:500,textDecoration:"none",cursor:"pointer",transition:"all .15s"},onMouseEnter:e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.25)";e.currentTarget.style.color="var(--tx)";},onMouseLeave:e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.13)";e.currentTarget.style.color="var(--tx2)";}},h(StarIcon,null),"Star",h(StarCount,null))
       )
     ),
     h("div",{className:"rpills"},REGIONS.map(r=>{const cnt=counts[r.id]||0;const done=cnt>=r.min,part=cnt>0&&!done;return h("div",{key:r.id,className:"rp"+(done?" done":part?" part":""),style:done?{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd}:{}},r.icon," ",rname(r)," ",h("span",{className:"rp-cnt"},cnt),h("span",{className:"rp-min"},"/"+r.min));})),
