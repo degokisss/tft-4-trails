@@ -167,7 +167,7 @@ const CHAMPS=[
   {id:"kogmaw",n:"Kog'Maw",c:1,r:["Void"]},{id:"chogath",n:"Cho'Gath",c:2,r:["Void"]},{id:"reksai",n:"Rek'Sai",c:2,r:["Void"],u:1},{id:"malzahar",n:"Malzahar",c:3,r:["Void"]},{id:"belveth",n:"Bel'Veth",c:4,r:["Void"],u:1},{id:"kaisa",n:"Kai'Sa",c:4,r:["Void"],u:1},{id:"riftherald",n:"Rift Herald",c:4,r:["Void"],u:1},{id:"baron",n:"Baron Nashor",c:7,r:["Void"],u:1}
 ];
 const champMap=Object.fromEntries(CHAMPS.map(c=>[c.id,c]));
-function getCounts(sel,emblems){const c={};REGIONS.forEach(r=>{c[r.id]=0;});sel.forEach(id=>{const ch=champMap[id];if(ch)ch.r.forEach(rid=>{c[rid]=(c[rid]||0)+1;});});emblems.forEach(rid=>{c[rid]=(c[rid]||0)+1;});return c;}
+function getCounts(sel,emblems){const c={};REGIONS.forEach(r=>{c[r.id]=0;});sel.forEach(id=>{const ch=champMap[id];if(ch)ch.r.forEach(rid=>{c[rid]=(c[rid]||0)+1;});});emblems.forEach((cnt,rid)=>{c[rid]=(c[rid]||0)+cnt;});return c;}
 function getActive(counts){return REGIONS.filter(r=>counts[r.id]>=r.min).map(r=>r.id);}
 function combs(arr,k){if(k===0)return[[]];if(arr.length<k)return[];const[f,...rest]=arr;return[...combs(rest,k-1).map(c=>[f,...c]),...combs(rest,k)];}
 function analyze(sel,emblems,maxG){
@@ -225,7 +225,7 @@ function BoardView({sel,counts,active,lang}){
   );
 }
 function App(){
-  const[lang,setLang]=useState("vi");const[sel,setSel]=useState(new Set());const[emblems,setEmblems]=useState(new Set());
+  const[lang,setLang]=useState("vi");const[sel,setSel]=useState(new Set());const[emblems,setEmblems]=useState(new Map());
   const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);
   const t=T[lang];
   const result=useMemo(()=>analyze(sel,emblems,maxG),[sel,emblems,maxG]);
@@ -236,8 +236,8 @@ function App(){
   const goptIds=useMemo(()=>{if(!gopt.length)return new Set();return new Set(gopt[0].parts.flatMap(p=>p.picks.map(c=>c.id)));},[gopt]);
   const filtered=useMemo(()=>CHAMPS.filter(c=>(filterR==="all"||c.r.includes(filterR))&&(!search||c.n.toLowerCase().includes(search.toLowerCase()))),[filterR,search]);
   const toggle=useCallback(id=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;}),[]);
-  const toggleE=useCallback(r=>setEmblems(p=>{const n=new Set(p);n.has(r)?n.delete(r):n.add(r);return n;}),[]);
-  const clearAll=()=>{setSel(new Set());setEmblems(new Set());};
+  const toggleE=useCallback(r=>setEmblems(p=>{const n=new Map(p);const cur=n.get(r)||0;if(cur>=2)n.delete(r);else n.set(r,cur+1);return n;}),[]);
+  const clearAll=()=>{setSel(new Set());setEmblems(new Map());};
   const rname=r=>lang==="vi"?r.vi:r.en;
   const GOLDS=[6,8,10,12,15,99];
   const optRows=optTab===0?(result.done?[]:result.suggs||[]):gopt;
@@ -253,7 +253,7 @@ function App(){
     h(BoardView,{sel,counts,active,lang}),
     h("div",{className:"layout"},
       h("div",null,
-        h("div",{className:"card mb10"},h("div",{className:"card-ttl"},t.emblems),h("div",{className:"emb-grid"},REGIONS.filter(r=>!r.noEmb).map(r=>{const on=emblems.has(r.id);return h("button",{key:r.id,className:"eb"+(on?" on":""),style:{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd},onClick:()=>toggleE(r.id)},h("span",{className:"eb-icon",style:{"--pbg":r.bg,"--pbd":r.bd}},r.icon),(lang==="vi"?t.empfx:"")+rname(r));}))),
+        h("div",{className:"card mb10"},h("div",{className:"card-ttl"},t.emblems),h("div",{className:"emb-grid"},REGIONS.filter(r=>!r.noEmb).map(r=>{const cnt=emblems.get(r.id)||0;return h("button",{key:r.id,className:"eb"+(cnt>0?" on":""),style:{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd},onClick:()=>toggleE(r.id),title:"Click để thêm ấn (tối đa 2)"},h("span",{className:"eb-icon",style:{"--pbg":r.bg,"--pbd":r.bd}},r.icon),(lang==="vi"?t.empfx:"")+rname(r),cnt>0&&h("span",{style:{marginLeft:4,fontSize:10,fontWeight:700,background:"var(--pc)",color:"#000",borderRadius:10,padding:"0 5px",lineHeight:"14px"}},cnt));})))
         h("div",{className:"gf mb10"},h("div",{className:"gf-top"},h("span",{className:"gf-lbl"},t.goldFilter),h("span",{className:"gf-val"},maxG>=99?t.goldAll:"≤"+maxG+"g")),h("div",{className:"gf-btns"},GOLDS.map(g=>h("button",{key:g,className:"gfb"+(maxG===g?" on":""),onClick:()=>setMaxG(g)},g>=99?t.goldAll:"≤"+g+"g")))),
         h("div",{className:"opt-board"},
           h("div",{className:"card-ttl"},t.optTitle),
