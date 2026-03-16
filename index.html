@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>TFT — Lõi XP 4 Tộc Khu Vực</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -16,7 +15,7 @@
   --info:#93c5fd;--infob:rgba(147,197,253,.1);
   --danger:#f87171;--r:10px;--rl:14px;--rxl:18px;
 }
-body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(124,106,247,.07) 0%,transparent 60%),
     radial-gradient(ellipse 60% 40% at 80% 80%,rgba(45,212,191,.04) 0%,transparent 60%)}
@@ -129,7 +128,7 @@ button{outline:none;font-family:"Inter",sans-serif}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-const {useState,useMemo,useCallback}=React;
+const {useState,useMemo,useCallback,useEffect}=React;
 const h=React.createElement;
 const T={
   vi:{title:"TFT Lõi XP — 4 Tộc Khu Vực",sub:"4 tộc Khu Vực → +4 XP / vòng người chơi",xpOn:"✓ +4 XP / vòng — kích hoạt!",xpOff:n=>n+"/4 tộc — +"+(n>=1?2:0)+" XP/vòng",emblems:"Ấn tộc hệ đang có",empfx:"Ấn ",suggs:"Combo rẻ nhất từ bàn hiện tại",need:n=>"Cần thêm "+n+" tộc",done:"✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng đấu người chơi.",panel:n=>"Tướng trên bàn ("+n+")",search:"Tìm tên tướng...",clear:"Xóa tất cả",all:"Tất cả",gold:"g",noSugg:"Chọn tướng để xem gợi ý",goldFilter:"Lọc vàng tối đa",goldAll:"Tất cả",boardTitle:"Đội hình hiện tại",optTitle:"Đội hình đề xuất tối ưu",optTab1:"Từ bàn hiện tại",optTab2:"Tối ưu toàn cục",tooExp:g=>"Không có combo ≤"+g+"g",sortGold:"Ít vàng nhất",sortChamp:"Ít tướng nhất",champCount:n=>n+" tướng"},
@@ -173,6 +172,7 @@ const champMap=Object.fromEntries(CHAMPS.map(c=>[c.id,c]));
 function getCounts(sel,emblems){const c={};REGIONS.forEach(r=>{c[r.id]=0;});sel.forEach(id=>{const ch=champMap[id];if(ch)ch.r.forEach(rid=>{c[rid]=(c[rid]||0)+1;});});emblems.forEach((cnt,rid)=>{c[rid]=(c[rid]||0)+cnt;});return c;}
 function getActive(counts){return REGIONS.filter(r=>counts[r.id]>=r.min).map(r=>r.id);}
 function combs(arr,k){if(k===0)return[[]];if(arr.length<k)return[];const[f,...rest]=arr;return[...combs(rest,k-1).map(c=>[f,...c]),...combs(rest,k)];}
+const GLOBAL_COMBOS=combs(REGIONS,4).map(c=>c.map(r=>r.id));
 
 // Greedy solver: fast, no DFS, handles multi-region champs.
 // For each region combo, pick champs that cover the most gaps first (greedy).
@@ -270,8 +270,7 @@ function analyze(sel,emblems,maxG){
 }
 function globalOpt(maxG){
   const emptyCounts={};REGIONS.forEach(r=>{emptyCounts[r.id]=0;});
-  const combos=combs(REGIONS,4).map(c=>c.map(r=>r.id));
-  return buildRows(combos,emptyCounts,new Set(),maxG);
+  return buildRows(GLOBAL_COMBOS,emptyCounts,new Set(),maxG);
 }
 function ChampImg({id,size,radius}){
   const[err,setErr]=useState(false);const[err2,setErr2]=useState(false);const url=DM[id]?DDR+DM[id]+".png":null;const url2=!url&&TM[id]?TDR+TM[id]+".png":null;
@@ -317,7 +316,7 @@ function App(){
   const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);const[sortMode,setSortMode]=useState("gold");
   const t=T[lang];
   const result=useMemo(()=>analyze(sel,emblems,maxG),[sel,emblems,maxG]);
-  const gopt=useMemo(()=>globalOpt(maxG),[maxG]);
+  const[gopt,setGopt]=useState({byGold:[],byChamp:[]});useEffect(()=>{const id=requestAnimationFrame(()=>setGopt(globalOpt(maxG)));return()=>cancelAnimationFrame(id);},[maxG]);
   const counts=useMemo(()=>getCounts(sel,emblems),[sel,emblems]);
   const active=useMemo(()=>getActive(counts),[counts]);
   const suggIds=useMemo(()=>{const src=sortMode==="champ"?result.suggsChamp:result.suggsGold;if(result.done||!src?.length)return new Set();return new Set(src[0].picks.map(c=>c.id));},[result,sortMode]);
