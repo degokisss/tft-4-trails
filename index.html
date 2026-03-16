@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TFT — Lõi XP 4 Tộc Khu Vực</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0e17;
+      --bg2: #1a1828;
+      --bg3: #252336;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #e8e6f0;
+      --text2: #9693a8;
+      --text3: #5c596e;
+      --accent: #7c6af7;
+      --accent-bg: rgba(124,106,247,0.15);
+      --success: #4ade80;
+      --success-bg: rgba(74,222,128,0.12);
+      --warn: #fbbf24;
+      --warn-bg: rgba(251,191,36,0.12);
+      --danger: #f87171;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    #root { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+    /* ---- Header ---- */
+    .app-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--bg2);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius-lg);
+      margin-bottom: 14px;
+    }
+    .app-header h1 { font-size: 16px; font-weight: 600; }
+    .app-header p { font-size: 12px; color: var(--text2); margin-top: 3px; }
+    .xp-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .xp-badge.active { background: var(--success-bg); border: 0.5px solid rgba(74,222,128,0.3); color: var(--success); }
+    .xp-badge.partial { background: var(--warn-bg); border: 0.5px solid rgba(251,191,36,0.3); color: var(--warn); }
+
+    /* ---- Progress pills ---- */
+    .region-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+      border: 0.5px solid var(--border);
+      background: var(--bg2);
+      color: var(--text2);
+      transition: all 0.15s;
+    }
+    .pill.active { color: var(--pill-color); background: var(--pill-bg); border-color: var(--pill-border); }
+    .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ---- Card layout ---- */
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 620px) { .layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--bg2);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text3); margin-bottom: 10px;
+    }
+
+    /* ---- Emblem buttons ---- */
+    .emblem-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+    .emblem-btn {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer;
+      background: transparent; border: 0.5px solid var(--border);
+      color: var(--text2); transition: all 0.12s; font-family: 'Inter',sans-serif;
+    }
+    .emblem-btn:hover { border-color: var(--border2); color: var(--text); }
+    .emblem-btn.active { color: var(--pill-color); background: var(--pill-bg); border-color: var(--pill-border); font-weight: 500; }
+
+    /* ---- Search + filter ---- */
+    .search-input {
+      width: 100%; padding: 7px 10px; font-size: 12px; font-family: 'Inter',sans-serif;
+      border-radius: var(--radius); border: 0.5px solid var(--border2);
+      background: var(--bg3); color: var(--text); outline: none; margin-bottom: 8px;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+    .filter-btn {
+      padding: 3px 9px; border-radius: 20px; font-size: 11px; cursor: pointer;
+      background: transparent; border: 0.5px solid var(--border); color: var(--text2);
+      font-family: 'Inter',sans-serif; transition: all 0.1s;
+    }
+    .filter-btn.active { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+
+    /* ---- Champ grid ---- */
+    .champ-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 5px; max-height: 420px; overflow-y: auto; }
+    .champ-grid::-webkit-scrollbar { width: 4px; }
+    .champ-grid::-webkit-scrollbar-track { background: transparent; }
+    .champ-grid::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .champ-btn {
+      position: relative; padding: 7px 4px 6px; border-radius: var(--radius);
+      cursor: pointer; text-align: center;
+      background: var(--bg3); border: 0.5px solid var(--border);
+      color: var(--text2); transition: all 0.12s; font-family: 'Inter',sans-serif;
+    }
+    .champ-btn:hover { border-color: var(--border2); color: var(--text); }
+    .champ-btn.selected { color: var(--pill-color); background: var(--pill-bg); border: 1.5px solid var(--pill-border); }
+    .champ-btn.suggested { border-style: dashed; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+    .champ-name { font-size: 10px; line-height: 1.2; margin-top: 2px; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .champ-region { font-size: 9px; opacity: 0.55; margin-top: 1px; }
+    .champ-cost { font-size: 9px; font-weight: 600; }
+    .sel-dot { position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    /* ---- Suggestions ---- */
+    .sugg-header { font-size: 12px; font-weight: 500; color: var(--warn); margin-bottom: 8px; }
+    .sugg-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: var(--radius); margin-bottom: 5px;
+      border: 0.5px solid var(--border); background: transparent;
+      transition: background 0.1s;
+    }
+    .sugg-row.top { border-color: var(--warn); background: var(--warn-bg); }
+    .sugg-row:last-child { margin-bottom: 0; }
+    .sugg-picks { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+    .sugg-pick {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 20px; font-size: 11px;
+      color: var(--pill-color); background: var(--pill-bg); border: 0.5px solid var(--pill-border);
+    }
+    .sugg-pick .cost { font-size: 9px; font-weight: 700; }
+    .sugg-total { font-size: 11px; color: var(--text2); white-space: nowrap; margin-left: auto; }
+    .no-sugg { font-size: 12px; color: var(--text2); text-align: center; padding: 20px 0; }
+
+    .done-box {
+      background: var(--success-bg); border: 0.5px solid rgba(74,222,128,0.3);
+      border-radius: var(--radius); padding: 10px 14px;
+      font-size: 12px; color: var(--success); font-weight: 500;
+      text-align: center;
+    }
+
+    button { outline: none; }
+    .clear-btn {
+      font-size: 11px; color: var(--danger); background: none; border: none; cursor: pointer;
+      font-family: 'Inter',sans-serif; padding: 0;
+    }
+    .row-between { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+
+    /* Cost colors */
+    .c1 { color: #9ca3af; }
+    .c2 { color: #4ade80; }
+    .c3 { color: #60a5fa; }
+    .c4 { color: #c084fc; }
+    .c5 { color: #fbbf24; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+const { useState, useMemo } = React;
+const e = React.createElement;
+
+const COST_CLS = ['','c1','c2','c3','c4','c5'];
+
+const REGIONS = [
+  { id:'Bilgewater',    name:'Bilgewater',    icon:'BW', color:'#2dd4bf', bg:'rgba(45,212,191,0.14)', border:'rgba(45,212,191,0.45)' },
+  { id:'Demacia',       name:'Demacia',        icon:'DM', color:'#fbbf24', bg:'rgba(251,191,36,0.14)',  border:'rgba(251,191,36,0.45)'  },
+  { id:'Freljord',      name:'Freljord',       icon:'FJ', color:'#93c5fd', bg:'rgba(147,197,253,0.14)', border:'rgba(147,197,253,0.45)' },
+  { id:'Ionia',         name:'Ionia',          icon:'IO', color:'#f9a8d4', bg:'rgba(249,168,212,0.14)', border:'rgba(249,168,212,0.45)' },
+  { id:'Ixtal',         name:'Ixtal',          icon:'IX', color:'#6ee7b7', bg:'rgba(110,231,183,0.14)', border:'rgba(110,231,183,0.45)' },
+  { id:'Noxus',         name:'Noxus',          icon:'NX', color:'#fca5a5', bg:'rgba(252,165,165,0.14)', border:'rgba(252,165,165,0.45)' },
+  { id:'Piltover',      name:'Piltover',       icon:'PT', color:'#67e8f9', bg:'rgba(103,232,249,0.14)', border:'rgba(103,232,249,0.45)' },
+  { id:'Shadow Isles',  name:'D. Bóng Đêm',   icon:'SI', color:'#c4b5fd', bg:'rgba(196,181,253,0.14)', border:'rgba(196,181,253,0.45)' },
+  { id:'Shurima',       name:'Shurima',        icon:'SR', color:'#fcd34d', bg:'rgba(252,211,77,0.14)',  border:'rgba(252,211,77,0.45)'  },
+  { id:'Targon',        name:'Targon',         icon:'TG', color:'#e2e8f0', bg:'rgba(226,232,240,0.10)', border:'rgba(226,232,240,0.35)' },
+  { id:'Void',          name:'Hư Không',       icon:'VD', color:'#a78bfa', bg:'rgba(167,139,250,0.14)', border:'rgba(167,139,250,0.45)' },
+];
+
+const CHAMPS = [
+  {id:'graves',n:'Graves',c:1,r:'Bilgewater'},{id:'fizz',n:'Fizz',c:1,r:'Bilgewater'},
+  {id:'illaoi',n:'Illaoi',c:2,r:'Bilgewater'},{id:'tf',n:'Twisted Fate',c:2,r:'Bilgewater'},
+  {id:'nautilus',n:'Nautilus',c:3,r:'Bilgewater'},{id:'gangplank',n:'Gangplank',c:4,r:'Bilgewater'},
+  {id:'mf',n:'Miss Fortune',c:4,r:'Bilgewater'},{id:'tahm',n:'Tahm Kench',c:5,r:'Bilgewater'},
+  {id:'lux',n:'Lux',c:1,r:'Demacia'},{id:'poppy',n:'Poppy',c:1,r:'Demacia'},
+  {id:'jarvan',n:'Jarvan IV',c:2,r:'Demacia'},{id:'garen',n:'Garen',c:2,r:'Demacia'},
+  {id:'xin',n:'Xin Zhao',c:3,r:'Demacia'},{id:'sona',n:'Sona',c:3,r:'Demacia'},
+  {id:'galio',n:'Galio',c:5,r:'Demacia'},
+  {id:'trynd',n:'Tryndamere',c:1,r:'Freljord'},{id:'olaf',n:'Olaf',c:1,r:'Freljord'},
+  {id:'ashe',n:'Ashe',c:2,r:'Freljord'},{id:'lissandra',n:'Lissandra',c:3,r:'Freljord'},
+  {id:'seraphine',n:'Seraphine',c:3,r:'Freljord'},{id:'sejuani',n:'Sejuani',c:4,r:'Freljord'},
+  {id:'yunara',n:'Yunara',c:5,r:'Freljord'},
+  {id:'karma',n:'Karma',c:1,r:'Ionia'},{id:'yasuo',n:'Yasuo',c:2,r:'Ionia'},
+  {id:'akali',n:'Akali',c:2,r:'Ionia'},{id:'zed',n:'Zed',c:3,r:'Ionia'},
+  {id:'shen',n:'Shen',c:3,r:'Ionia'},{id:'yone',n:'Yone',c:3,r:'Ionia'},
+  {id:'ahri',n:'Ahri',c:4,r:'Ionia'},{id:'jhin',n:'Jhin',c:4,r:'Ionia'},
+  {id:'zyra',n:'Zyra',c:1,r:'Ixtal'},{id:'neeko',n:'Neeko',c:2,r:'Ixtal'},
+  {id:'milio',n:'Milio',c:2,r:'Ixtal'},{id:'qiyana',n:'Qiyana',c:3,r:'Ixtal'},
+  {id:'nidalee',n:'Nidalee',c:4,r:'Ixtal'},
+  {id:'talon',n:'Talon',c:1,r:'Noxus'},{id:'leblanc',n:'LeBlanc',c:2,r:'Noxus'},
+  {id:'vlad',n:'Vladimir',c:2,r:'Noxus'},{id:'sion',n:'Sion',c:3,r:'Noxus'},
+  {id:'samira',n:'Samira',c:3,r:'Noxus'},{id:'darius',n:'Darius',c:4,r:'Noxus'},
+  {id:'draven',n:'Draven',c:4,r:'Noxus'},{id:'ambessa',n:'Ambessa',c:5,r:'Noxus'},
+  {id:'jinx',n:'Jinx',c:1,r:'Piltover'},{id:'heimer',n:'Heimerdinger',c:1,r:'Piltover'},
+  {id:'vi',n:'Vi',c:2,r:'Piltover'},{id:'ekko',n:'Ekko',c:2,r:'Piltover'},
+  {id:'caitlyn',n:'Caitlyn',c:3,r:'Piltover'},{id:'orianna',n:'Orianna',c:3,r:'Piltover'},
+  {id:'singed',n:'Singed',c:4,r:'Piltover'},
+  {id:'elise',n:'Elise',c:1,r:'Shadow Isles'},{id:'maokai',n:'Maokai',c:1,r:'Shadow Isles'},
+  {id:'hecarim',n:'Hecarim',c:2,r:'Shadow Isles'},{id:'yorick',n:'Yorick',c:2,r:'Shadow Isles'},
+  {id:'gwen',n:'Gwen',c:3,r:'Shadow Isles'},{id:'viego',n:'Viego',c:4,r:'Shadow Isles'},
+  {id:'kalista',n:'Kalista',c:5,r:'Shadow Isles'},
+  {id:'sivir',n:'Sivir',c:1,r:'Shurima'},{id:'taliyah',n:'Taliyah',c:2,r:'Shurima'},
+  {id:'naafiri',n:'Naafiri',c:2,r:'Shurima'},{id:'nasus',n:'Nasus',c:3,r:'Shurima'},
+  {id:'renekton',n:'Renekton',c:4,r:'Shurima'},{id:'azir',n:'Azir',c:5,r:'Shurima'},
+  {id:'soraka',n:'Soraka',c:1,r:'Targon'},{id:'leona',n:'Leona',c:2,r:'Targon'},
+  {id:'taric',n:'Taric',c:2,r:'Targon'},{id:'diana',n:'Diana',c:3,r:'Targon'},
+  {id:'malzahar',n:'Malzahar',c:4,r:'Targon'},{id:'asol',n:"A. Sol",c:5,r:'Targon'},
+  {id:'kogmaw',n:"Kog'Maw",c:1,r:'Void'},{id:'velkoz',n:"Vel'Koz",c:3,r:'Void'},
+  {id:'chogath',n:"Cho'Gath",c:4,r:'Void'},{id:'belveth',n:"Bel'Veth",c:4,r:'Void'},
+  {id:'kaisa',n:"Kai'Sa",c:5,r:'Void'},
+];
+
+const regionMap = Object.fromEntries(REGIONS.map(r => [r.id, r]));
+const champMap  = Object.fromEntries(CHAMPS.map(c => [c.id, c]));
+
+function getCombos(arr, k) {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  const [f, ...rest] = arr;
+  return [
+    ...getCombos(rest, k-1).map(c => [f, ...c]),
+    ...getCombos(rest, k),
+  ];
+}
+
+function analyze(selIds, selEmblems) {
+  const covered = new Set();
+  selIds.forEach(id => { const c = champMap[id]; if(c) covered.add(c.r); });
+  selEmblems.forEach(r => covered.add(r));
+  if (covered.size >= 4) return { status:'done', covered:[...covered] };
+  const need  = 4 - covered.size;
+  const unco  = REGIONS.map(r => r.id).filter(id => !covered.has(id));
+  const byReg = {};
+  unco.forEach(rid => { byReg[rid] = CHAMPS.filter(c => c.r===rid && !selIds.has(c.id)).sort((a,b)=>a.c-b.c); });
+  const suggs = getCombos(unco, need)
+    .map(combo => {
+      const picks = combo.map(rid => ({ rid, champ: byReg[rid]?.[0] }));
+      if (picks.some(p => !p.champ)) return null;
+      return { picks, total: picks.reduce((s,p) => s+p.champ.c, 0) };
+    })
+    .filter(Boolean)
+    .sort((a,b) => a.total - b.total)
+    .slice(0, 6);
+  return { status:'incomplete', covered:[...covered], need, suggs };
+}
+
+// ─── RegionPill ───────────────────────────────────────
+function RegionPill({ region, active }) {
+  const style = {
+    '--pill-color': region.color,
+    '--pill-bg':    region.bg,
+    '--pill-border':region.border,
+  };
+  return e('div', { className:'pill' + (active?' active':''), style },
+    e('span', { className:'dot' }),
+    region.icon, ' ', region.name
+  );
+}
+
+// ─── SuggPick ─────────────────────────────────────────
+function SuggPick({ champ }) {
+  const rg = regionMap[champ.r];
+  const style = { '--pill-color':rg.color, '--pill-bg':rg.bg, '--pill-border':rg.border };
+  return e('div', { className:'sugg-pick', style },
+    e('span', { className:'cost '+COST_CLS[champ.c] }, champ.c+'★'),
+    champ.n,
+    e('span', { style:{fontSize:9,opacity:0.6} }, ' '+rg.icon)
+  );
+}
+
+// ─── ChampButton ──────────────────────────────────────
+function ChampButton({ champ, selected, suggested, onToggle }) {
+  const rg = regionMap[champ.r];
+  const cls = 'champ-btn' + (selected?' selected':suggested?' suggested':'');
+  const style = { '--pill-color':rg.color, '--pill-bg':rg.bg, '--pill-border':rg.border };
+  return e('button', { className:cls, style, onClick:()=>onToggle(champ.id) },
+    selected && e('div', { className:'sel-dot' }),
+    e('div', { className:'champ-cost '+COST_CLS[champ.c] }, '★'.repeat(champ.c)),
+    e('div', { className:'champ-name' }, champ.n),
+    e('div', { className:'champ-region' }, rg.icon)
+  );
+}
+
+// ─── App ──────────────────────────────────────────────
+function App() {
+  const [sel,     setSel]     = useState(new Set());
+  const [emblems, setEmblems] = useState(new Set());
+  const [filterR, setFilterR] = useState('all');
+  const [search,  setSearch]  = useState('');
+
+  const result   = useMemo(() => analyze(sel, emblems), [sel, emblems]);
+  const covered  = useMemo(() => {
+    const s = new Set();
+    sel.forEach(id => { const c = champMap[id]; if(c) s.add(c.r); });
+    emblems.forEach(r => s.add(r));
+    return s;
+  }, [sel, emblems]);
+  const topSuggIds = useMemo(() => {
+    if (result.status==='done'||!result.suggs?.length) return new Set();
+    return new Set(result.suggs[0].picks.map(p=>p.champ.id));
+  }, [result]);
+
+  const filtered = useMemo(() =>
+    CHAMPS.filter(c =>
+      (filterR==='all' || c.r===filterR) &&
+      (!search || c.n.toLowerCase().includes(search.toLowerCase()))
+    ),
+  [filterR, search]);
+
+  const toggleChamp  = id => setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; });
+  const toggleEmblem = r  => setEmblems(p => { const n=new Set(p); n.has(r)?n.delete(r):n.add(r); return n; });
+  const clearAll     = () => { setSel(new Set()); setEmblems(new Set()); };
+
+  const xpCls  = covered.size>=4 ? 'active' : 'partial';
+  const xpText = covered.size>=4
+    ? '✓ +4 XP / vòng đang kích hoạt!'
+    : `${covered.size} / 4 tộc — +${covered.size>=1?2:0} XP/vòng`;
+
+  return e('div', null,
+    // Header
+    e('div', { className:'app-header' },
+      e('div', null,
+        e('h1', null, 'TFT Lõi XP — 4 Tộc Khu Vực'),
+        e('p', null, 'Đủ 4 tộc Khu Vực khác nhau → +4 XP mỗi vòng giao tranh người chơi')
+      ),
+      e('div', { className:'xp-badge '+xpCls }, xpText)
+    ),
+
+    // Region progress
+    e('div', { className:'region-pills' },
+      REGIONS.map(r => e(RegionPill, { key:r.id, region:r, active:covered.has(r.id) }))
+    ),
+
+    // 2-col layout
+    e('div', { className:'layout' },
+
+      // Left: Emblems + Suggestions
+      e('div', null,
+        // Emblems
+        e('div', { className:'card', style:{marginBottom:14} },
+          e('div', { className:'card-title' }, 'Ấn tộc hệ đang có'),
+          e('div', { className:'emblem-grid' },
+            REGIONS.map(r => {
+              const act = emblems.has(r.id);
+              const st  = { '--pill-color':r.color, '--pill-bg':r.bg, '--pill-border':r.border };
+              return e('button', {
+                key:r.id, className:'emblem-btn'+(act?' active':''), style:st,
+                onClick:()=>toggleEmblem(r.id)
+              }, 'Ấn '+r.name);
+            })
+          )
+        ),
+
+        // Suggestions / Done
+        e('div', { className:'card' },
+          result.status==='done'
+            ? e('div', { className:'done-box' }, '✓ Lõi XP đã kích hoạt! Đang nhận +4 XP mỗi vòng')
+            : e('div', null,
+                e('div', { className:'sugg-header' },
+                  `Cần thêm ${result.need} tộc — Combo rẻ nhất`
+                ),
+                result.suggs?.length
+                  ? result.suggs.map((sg,i) =>
+                      e('div', { key:i, className:'sugg-row'+(i===0?' top':'') },
+                        e('div', { className:'sugg-picks' },
+                          sg.picks.map(p => e(SuggPick, { key:p.champ.id, champ:p.champ }))
+                        ),
+                        e('div', { className:'sugg-total' }, sg.total+'g')
+                      )
+                    )
+                  : e('div', { className:'no-sugg' }, 'Chọn tướng bên phải để xem gợi ý')
+              )
+        )
+      ),
+
+      // Right: Champion selector
+      e('div', { className:'card' },
+        e('div', { className:'row-between' },
+          e('div', { className:'card-title', style:{margin:0} }, 'Tướng trên bàn ('+sel.size+')'),
+          sel.size+emblems.size > 0 && e('button', { className:'clear-btn', onClick:clearAll }, 'Xóa tất cả')
+        ),
+        e('input', {
+          className:'search-input', placeholder:'Tìm tên tướng...',
+          value:search, onChange:ev=>setSearch(ev.target.value)
+        }),
+        e('div', { className:'filter-row' },
+          e('button', {
+            className:'filter-btn'+(filterR==='all'?' active':''),
+            onClick:()=>setFilterR('all')
+          }, 'Tất cả'),
+          REGIONS.map(r => {
+            const act = filterR===r.id;
+            const st  = act ? { color:r.color } : {};
+            return e('button', {
+              key:r.id, className:'filter-btn'+(act?' active':''), style:st,
+              onClick:()=>setFilterR(filterR===r.id ? 'all' : r.id)
+            }, r.icon+' '+r.name);
+          })
+        ),
+        e('div', { className:'champ-grid' },
+          filtered.map(ch =>
+            e(ChampButton, {
+              key:ch.id, champ:ch,
+              selected:sel.has(ch.id),
+              suggested:topSuggIds.has(ch.id)&&!sel.has(ch.id),
+              onToggle:toggleChamp
+            })
+          )
+        )
+      )
+    )
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(e(App));
+</script>
+</body>
+</html>
