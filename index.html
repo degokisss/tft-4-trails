@@ -129,7 +129,7 @@ button{outline:none;font-family:"Inter",sans-serif}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-const {useState,useMemo,useCallback,useEffect}=React;
+const {useState,useMemo,useCallback}=React;
 const h=React.createElement;
 const T={
   vi:{title:"TFT Lõi XP — 4 Tộc Khu Vực",sub:"4 tộc Khu Vực → +4 XP / vòng người chơi",xpOn:"✓ +4 XP / vòng — kích hoạt!",xpOff:n=>n+"/4 tộc — +"+(n>=1?2:0)+" XP/vòng",emblems:"Ấn tộc hệ đang có",empfx:"Ấn ",suggs:"Combo rẻ nhất từ bàn hiện tại",need:n=>"Cần thêm "+n+" tộc",done:"✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng đấu người chơi.",panel:n=>"Tướng trên bàn ("+n+")",search:"Tìm tên tướng...",clear:"Xóa tất cả",all:"Tất cả",gold:"g",noSugg:"Chọn tướng để xem gợi ý",goldFilter:"Lọc vàng tối đa",goldAll:"Tất cả",boardTitle:"Đội hình hiện tại",optTitle:"Đội hình đề xuất tối ưu",optTab1:"Từ bàn hiện tại",optTab2:"Tối ưu toàn cục",tooExp:g=>"Không có combo ≤"+g+"g",sortGold:"Ít vàng nhất",sortChamp:"Ít tướng nhất",champCount:n=>n+" tướng"},
@@ -239,21 +239,36 @@ function analyze(sel,emblems,maxG){
   const byChamp=dedup([...rawG,...rawC].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
   return{done:false,active,counts,need,suggsGold:byGold,suggsChamp:byChamp};
 }
+// globalOpt: fast greedy per region (no DFS) — O(495 * n)
+function greedyForRegion(rid,excludeIds){
+  const reg=regMap[rid];
+  const avail=CHAMPS.filter(c=>!excludeIds.has(c.id)&&c.r.includes(rid)).sort((a,b)=>a.c-b.c);
+  if(avail.length<reg.min)return null;
+  const picks=avail.slice(0,reg.min);
+  return{picks,cost:picks.reduce((s,p)=>s+p.c,0),cc:picks.length};
+}
 function globalOpt(maxG){
-  const emptyCounts={};REGIONS.forEach(r=>{emptyCounts[r.id]=0;});
+  // Precompute cheapest picks per region (greedy, ignore multi-region overlap)
+  const rc={};
+  REGIONS.forEach(r=>{rc[r.id]=greedyForRegion(r.id,new Set());});
+  const viable=REGIONS.filter(r=>rc[r.id]!==null);
   const rawG=[],rawC=[];
-  combs(REGIONS,4).forEach(combo=>{
+  combs(viable,4).forEach(combo=>{
+    const parts=combo.map(r=>rc[r.id]);
+    // Dedupe: if a champ appears in multiple regions, count once
+    const seen=new Set();const allPicks=[];
+    parts.forEach(p=>p.picks.forEach(ch=>{if(!seen.has(ch.id)){seen.add(ch.id);allPicks.push(ch);}}));
+    const total=allPicks.reduce((s,c)=>s+c.c,0);
+    const cc=allPicks.length;
+    if(maxG<99&&total>maxG)return;
     const rids=combo.map(r=>r.id);
-    const res=findPicks(rids,emptyCounts,new Set(),maxG);
-    if(!res)return;
-    rawG.push({picks:res.byGold.picks,parts:makeParts(res.byGold.picks,rids),total:res.byGold.cost,cc:res.byGold.cc,regions:rids});
-    if(res.byChamp!==res.byGold)rawC.push({picks:res.byChamp.picks,parts:makeParts(res.byChamp.picks,rids),total:res.byChamp.cost,cc:res.byChamp.cc,regions:rids});
+    rawG.push({picks:allPicks,parts:makeParts(allPicks,rids),total,cc,regions:rids});
   });
   const seen=new Set();
   const dedup=arr=>arr.filter(r=>{const k=r.picks.map(c=>c.id).sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
-  const byGold=dedup(rawG.sort((a,b)=>a.total-b.total||a.cc-b.cc)).slice(0,8);
+  const byGold=dedup([...rawG].sort((a,b)=>a.total-b.total||a.cc-b.cc)).slice(0,8);
   seen.clear();
-  const byChamp=dedup([...rawG,...rawC].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
+  const byChamp=dedup([...rawG].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
   return{byGold,byChamp};
 }
 function ChampImg({id,size,radius}){
@@ -300,7 +315,7 @@ function App(){
   const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);const[sortMode,setSortMode]=useState("gold");
   const t=T[lang];
   const result=useMemo(()=>analyze(sel,emblems,maxG),[sel,emblems,maxG]);
-  const[gopt,setGopt]=useState({byGold:[],byChamp:[]});useEffect(()=>{const id=setTimeout(()=>setGopt(globalOpt(maxG)),0);return()=>clearTimeout(id);},[maxG]);
+  const gopt=useMemo(()=>globalOpt(maxG),[maxG]);
   const counts=useMemo(()=>getCounts(sel,emblems),[sel,emblems]);
   const active=useMemo(()=>getActive(counts),[counts]);
   const suggIds=useMemo(()=>{const src=sortMode==="champ"?result.suggsChamp:result.suggsGold;if(result.done||!src?.length)return new Set();return new Set(src[0].picks.map(c=>c.id));},[result,sortMode]);
