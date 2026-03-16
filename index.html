@@ -195,7 +195,7 @@ function PickChip({ch,cls,imgSize}){
   const rg=regMap[ch.r[0]];
   return h("div",{className:cls,style:{"--pc":rg.color,"--pbg":rg.bg,"--pbd":rg.bd}},
     h(ChampImg,{id:ch.id,size:imgSize||"16px",radius:3}),
-    h("span",{className:(cls.includes("opick")?"ocost ":"scost ")+CC[ch.c]},ch.c+"★"),
+    h("span",{className:(cls.includes("opick")?"ocost ":"scost ")+CC[ch.c]},ch.c+"g"),
     ch.n,ch.r.length>1&&h("span",{style:{fontSize:8,opacity:.6}}," ✦"),
     h("span",{style:{fontSize:9,opacity:.5}}," "+rg.icon)
   );
@@ -276,7 +276,7 @@ function App(){
             h("div",{className:"cbar",style:{background:CB[ch.c]}}),
             h("div",{className:"cimg-w"},h(ChampImg,{id:ch.id})),
             h("div",{className:"cname"},ch.n),
-            h("div",{className:"cmeta"},h("span",{className:CC[ch.c]},"★".repeat(Math.min(ch.c,5)))," ",ch.r.length>1?h("span",{style:{fontSize:8}},ch.r.map(rid=>regMap[rid]?.icon||"").join("")):rg.icon),
+            h("div",{className:"cmeta"},h("span",{className:CC[ch.c]},ch.c+"g")," ",ch.r.length>1?h("span",{style:{fontSize:8}},ch.r.map(rid=>regMap[rid]?.icon||"").join("")):rg.icon),
             isSel&&h("div",{className:"sel-b"},h("svg",{viewBox:"0 0 10 10",width:8,height:8},h("polyline",{points:"2,5 4,8 8,2",stroke:"#000",strokeWidth:1.5,fill:"none",strokeLinecap:"round"}))),
             isSug&&h("div",{className:"lbl-sug"},lang==="vi"?"GỢI Ý":"PICK"),
             isOpt&&h("div",{className:"lbl-opt"},lang==="vi"?"TỐI ƯU":"OPT"),
