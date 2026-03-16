@@ -173,20 +173,88 @@ const champMap=Object.fromEntries(CHAMPS.map(c=>[c.id,c]));
 function getCounts(sel,emblems){const c={};REGIONS.forEach(r=>{c[r.id]=0;});sel.forEach(id=>{const ch=champMap[id];if(ch)ch.r.forEach(rid=>{c[rid]=(c[rid]||0)+1;});});emblems.forEach((cnt,rid)=>{c[rid]=(c[rid]||0)+cnt;});return c;}
 function getActive(counts){return REGIONS.filter(r=>counts[r.id]>=r.min).map(r=>r.id);}
 function combs(arr,k){if(k===0)return[[]];if(arr.length<k)return[];const[f,...rest]=arr;return[...combs(rest,k-1).map(c=>[f,...c]),...combs(rest,k)];}
+
+// Joint DFS optimizer: considers multi-region champs filling multiple gaps at once.
+// Runs two separate DFS passes: one for min-gold, one for min-champs.
+function findPicks(regionIds,counts,excludeIds,maxG){
+  const gaps={};
+  regionIds.forEach(rid=>{const have=counts[rid]||0;gaps[rid]=Math.max(0,(regMap[rid]?.min||1)-have);});
+  if(Object.values(gaps).every(v=>v===0))return{byGold:{picks:[],cost:0,cc:0},byChamp:{picks:[],cost:0,cc:0}};
+  const base=CHAMPS.filter(c=>!excludeIds.has(c.id)&&c.r.some(rid=>gaps[rid]>0));
+  if(!base.length)return null;
+  // DFS 1: min gold — sort cheapest first, prune by gold
+  let bestG=null;
+  {const cands=[...base].sort((a,b)=>a.c-b.c);
+  function dfsG(i,rem,picks,cost){
+    const rt=Object.values(rem).reduce((s,v)=>s+v,0);
+    if(rt<=0){const cc=picks.length;if(!bestG||cost<bestG.cost||(cost===bestG.cost&&cc<bestG.cc))bestG={picks:[...picks],cost,cc};return;}
+    if(i>=cands.length)return;
+    if(bestG&&cost+rt*cands[i].c>=bestG.cost)return;
+    if(maxG<99&&cost+cands[i].c>maxG)return;
+    const ch=cands[i];const ng={...rem};ch.r.forEach(rid=>{if(ng[rid]>0)ng[rid]--;});
+    picks.push(ch);dfsG(i+1,ng,picks,cost+ch.c);picks.pop();
+    dfsG(i+1,rem,picks,cost);
+  }
+  dfsG(0,{...gaps},[],0);}
+  // DFS 2: min champs — sort by most gaps covered first, prune by champ count
+  let bestC=null;
+  {const cands=[...base].sort((a,b)=>{const ca=a.r.filter(r=>gaps[r]>0).length,cb=b.r.filter(r=>gaps[r]>0).length;return cb-ca||a.c-b.c;});
+  function dfsC(i,rem,picks,cost){
+    const rt=Object.values(rem).reduce((s,v)=>s+v,0);
+    if(rt<=0){const cc=picks.length;if(!bestC||cc<bestC.cc||(cc===bestC.cc&&cost<bestC.cost))bestC={picks:[...picks],cost,cc};return;}
+    if(i>=cands.length)return;
+    if(bestC&&picks.length>=bestC.cc)return;
+    if(maxG<99&&cost+cands[i].c>maxG)return;
+    const ch=cands[i];const ng={...rem};ch.r.forEach(rid=>{if(ng[rid]>0)ng[rid]--;});
+    picks.push(ch);dfsC(i+1,ng,picks,cost+ch.c);picks.pop();
+    dfsC(i+1,rem,picks,cost);
+  }
+  dfsC(0,{...gaps},[],0);}
+  return bestG?{byGold:bestG,byChamp:bestC||bestG}:null;
+}
+// Flatten picks back into a parts-like array (one entry per region combo)
+function makeParts(picks,regionIds){
+  // Group by primary region for display
+  const m={};regionIds.forEach(rid=>{m[rid]=[];});
+  picks.forEach(ch=>{const match=ch.r.find(rid=>regionIds.includes(rid));if(match)m[match].push(ch);});
+  return regionIds.map(rid=>({region:regMap[rid],picks:m[rid]||[]}));
+}
 function analyze(sel,emblems,maxG){
   const counts=getCounts(sel,emblems);const active=getActive(counts);
   if(active.length>=4)return{done:true,active,counts};
   const need=4-active.length;const notActive=REGIONS.filter(r=>!active.includes(r.id));
-  const rc={};
-  notActive.forEach(r=>{const already=counts[r.id]||0;const sn=r.min-already;const avail=CHAMPS.filter(c=>c.r.includes(r.id)&&!sel.has(c.id)).sort((a,b)=>a.c-b.c);if(avail.length<sn){rc[r.id]=null;return;}const picks=avail.slice(0,sn);rc[r.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0)};});
-  const viable=notActive.filter(r=>rc[r.id]!==null);
-  const suggs=combs(viable,need).map(combo=>{const parts=combo.map(r=>({...rc[r.id],region:r}));const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;const cc=parts.reduce((s,p)=>s+p.picks.length,0);return{parts,total,cc};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,6);
-  return{done:false,active,counts,need,suggs};
+  const rawG=[],rawC=[];
+  combs(notActive,need).forEach(combo=>{
+    const rids=combo.map(r=>r.id);
+    const res=findPicks(rids,counts,sel,maxG);
+    if(!res)return;
+    rawG.push({picks:res.byGold.picks,parts:makeParts(res.byGold.picks,rids),total:res.byGold.cost,cc:res.byGold.cc,regions:rids});
+    if(res.byChamp!==res.byGold)rawC.push({picks:res.byChamp.picks,parts:makeParts(res.byChamp.picks,rids),total:res.byChamp.cost,cc:res.byChamp.cc,regions:rids});
+  });
+  // Merge and deduplicate by picks signature
+  const seen=new Set();
+  const dedup=arr=>arr.filter(r=>{const k=r.picks.map(c=>c.id).sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
+  const byGold=dedup(rawG.sort((a,b)=>a.total-b.total||a.cc-b.cc)).slice(0,8);
+  seen.clear();
+  const byChamp=dedup([...rawG,...rawC].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
+  return{done:false,active,counts,need,suggsGold:byGold,suggsChamp:byChamp};
 }
 function globalOpt(maxG){
-  const rc={};REGIONS.forEach(r=>{const avail=CHAMPS.filter(c=>c.r.includes(r.id)).sort((a,b)=>a.c-b.c);if(avail.length<r.min){rc[r.id]=null;return;}const picks=avail.slice(0,r.min);rc[r.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0),region:r};});
-  const viable=REGIONS.filter(r=>rc[r.id]!==null);
-  return combs(viable,4).map(combo=>{const parts=combo.map(r=>rc[r.id]);const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;const cc=parts.reduce((s,p)=>s+p.picks.length,0);return{parts,total,cc};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,5);
+  const emptyCounts={};REGIONS.forEach(r=>{emptyCounts[r.id]=0;});
+  const rawG=[],rawC=[];
+  combs(REGIONS,4).forEach(combo=>{
+    const rids=combo.map(r=>r.id);
+    const res=findPicks(rids,emptyCounts,new Set(),maxG);
+    if(!res)return;
+    rawG.push({picks:res.byGold.picks,parts:makeParts(res.byGold.picks,rids),total:res.byGold.cost,cc:res.byGold.cc,regions:rids});
+    if(res.byChamp!==res.byGold)rawC.push({picks:res.byChamp.picks,parts:makeParts(res.byChamp.picks,rids),total:res.byChamp.cost,cc:res.byChamp.cc,regions:rids});
+  });
+  const seen=new Set();
+  const dedup=arr=>arr.filter(r=>{const k=r.picks.map(c=>c.id).sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
+  const byGold=dedup(rawG.sort((a,b)=>a.total-b.total||a.cc-b.cc)).slice(0,8);
+  seen.clear();
+  const byChamp=dedup([...rawG,...rawC].sort((a,b)=>a.cc-b.cc||a.total-b.total)).slice(0,8);
+  return{byGold,byChamp};
 }
 function ChampImg({id,size,radius}){
   const[err,setErr]=useState(false);const[err2,setErr2]=useState(false);const url=DM[id]?DDR+DM[id]+".png":null;const url2=!url&&TM[id]?TDR+TM[id]+".png":null;
@@ -235,15 +303,15 @@ function App(){
   const gopt=useMemo(()=>globalOpt(maxG),[maxG]);
   const counts=useMemo(()=>getCounts(sel,emblems),[sel,emblems]);
   const active=useMemo(()=>getActive(counts),[counts]);
-  const suggIds=useMemo(()=>{if(result.done||!result.suggs?.length)return new Set();return new Set(result.suggs[0].parts.flatMap(p=>p.picks.map(c=>c.id)));},[result]);
-  const goptIds=useMemo(()=>{if(!gopt.length)return new Set();return new Set(gopt[0].parts.flatMap(p=>p.picks.map(c=>c.id)));},[gopt]);
+  const suggIds=useMemo(()=>{const src=sortMode==="champ"?result.suggsChamp:result.suggsGold;if(result.done||!src?.length)return new Set();return new Set(src[0].picks.map(c=>c.id));},[result,sortMode]);
+  const goptIds=useMemo(()=>{const src=sortMode==="champ"?gopt.byChamp:gopt.byGold;if(!src?.length)return new Set();return new Set(src[0].picks.map(c=>c.id));},[gopt,sortMode]);
   const filtered=useMemo(()=>CHAMPS.filter(c=>(filterR==="all"||c.r.includes(filterR))&&(!search||c.n.toLowerCase().includes(search.toLowerCase()))),[filterR,search]);
   const toggle=useCallback(id=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;}),[]);
   const toggleE=useCallback(r=>setEmblems(p=>{const n=new Map(p);const cur=n.get(r)||0;if(cur>=2)n.delete(r);else n.set(r,cur+1);return n;}),[]);
   const clearAll=()=>{setSel(new Set());setEmblems(new Map());};
   const rname=r=>lang==="vi"?r.vi:r.en;
   const GOLDS=[6,8,10,12,15,99];
-  const sortRows=rows=>[...rows].sort((a,b)=>sortMode==="champ"?(a.cc-b.cc||a.total-b.total):(a.total-b.total||a.cc-b.cc));const optRows=sortMode==="champ"?(optTab===0?(result.done?[]:sortRows(result.suggs||[])):sortRows(gopt)):(optTab===0?(result.done?[]:result.suggs||[]):gopt);
+  const optRows=optTab===0?(result.done?[]:(sortMode==="champ"?result.suggsChamp:result.suggsGold)||[]):(sortMode==="champ"?gopt.byChamp:gopt.byGold)||[];
   return h("div",null,
     h("div",{className:"hdr"},
       h("div",{className:"hdr-l"},h("div",{className:"hdr-icon"},"⚡"),h("div",null,h("div",{className:"hdr-h1"},t.title),h("div",{className:"hdr-sub"},t.sub))),
@@ -264,7 +332,7 @@ function App(){
           optTab===0&&result.done
             ? h("div",{className:"done-box",style:{fontSize:11,padding:10}},t.done)
             : optRows.length>0
-              ? optRows.map((row,i)=>h("div",{key:i,className:"orow"+(i===0?" top":"")},h("span",{className:"orank"},i===0?"★":i+1),h("div",{className:"opicks"},row.parts.flatMap(p=>p.picks).map(ch=>h(PickChip,{key:ch.id,ch,cls:"opick",imgSize:"16px"}))),h("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},h("span",{className:"ototl"},row.total+"g"),h("span",{style:{fontSize:9,color:"var(--tx3)"}},t.champCount(row.cc)))))
+              ? optRows.map((row,i)=>h("div",{key:i,className:"orow"+(i===0?" top":"")},h("span",{className:"orank"},i===0?"★":i+1),h("div",{className:"opicks"},row.picks.map(ch=>h(PickChip,{key:ch.id,ch,cls:"opick",imgSize:"16px"}))),h("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},h("span",{className:"ototl"},row.total+"g"),h("span",{style:{fontSize:9,color:"var(--tx3)"}},t.champCount(row.cc)))))
               : h("div",{className:"no-row"},maxG<99?t.tooExp(maxG):t.noSugg)
         )
       ),
