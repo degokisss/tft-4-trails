@@ -129,7 +129,7 @@ button{outline:none;font-family:"Inter",sans-serif}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-const {useState,useMemo,useCallback}=React;
+const {useState,useMemo,useCallback,useEffect}=React;
 const h=React.createElement;
 const T={
   vi:{title:"TFT Lõi XP — 4 Tộc Khu Vực",sub:"4 tộc Khu Vực → +4 XP / vòng người chơi",xpOn:"✓ +4 XP / vòng — kích hoạt!",xpOff:n=>n+"/4 tộc — +"+(n>=1?2:0)+" XP/vòng",emblems:"Ấn tộc hệ đang có",empfx:"Ấn ",suggs:"Combo rẻ nhất từ bàn hiện tại",need:n=>"Cần thêm "+n+" tộc",done:"✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng đấu người chơi.",panel:n=>"Tướng trên bàn ("+n+")",search:"Tìm tên tướng...",clear:"Xóa tất cả",all:"Tất cả",gold:"g",noSugg:"Chọn tướng để xem gợi ý",goldFilter:"Lọc vàng tối đa",goldAll:"Tất cả",boardTitle:"Đội hình hiện tại",optTitle:"Đội hình đề xuất tối ưu",optTab1:"Từ bàn hiện tại",optTab2:"Tối ưu toàn cục",tooExp:g=>"Không có combo ≤"+g+"g",sortGold:"Ít vàng nhất",sortChamp:"Ít tướng nhất",champCount:n=>n+" tướng"},
@@ -300,7 +300,7 @@ function App(){
   const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);const[sortMode,setSortMode]=useState("gold");
   const t=T[lang];
   const result=useMemo(()=>analyze(sel,emblems,maxG),[sel,emblems,maxG]);
-  const gopt=useMemo(()=>globalOpt(maxG),[maxG]);
+  const[gopt,setGopt]=useState({byGold:[],byChamp:[]});useEffect(()=>{const id=setTimeout(()=>setGopt(globalOpt(maxG)),0);return()=>clearTimeout(id);},[maxG]);
   const counts=useMemo(()=>getCounts(sel,emblems),[sel,emblems]);
   const active=useMemo(()=>getActive(counts),[counts]);
   const suggIds=useMemo(()=>{const src=sortMode==="champ"?result.suggsChamp:result.suggsGold;if(result.done||!src?.length)return new Set();return new Set(src[0].picks.map(c=>c.id));},[result,sortMode]);
