@@ -1,596 +1,293 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>TFT — Lõi XP 4 Tộc Khu Vực</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#0d0c14;--bg2:rgba(255,255,255,0.04);--bg3:rgba(255,255,255,0.07);
-      --bord:rgba(255,255,255,0.07);--bord2:rgba(255,255,255,0.13);
-      --tx:#e8e6f0;--tx2:#8a87a0;--tx3:#4a4860;
-      --ok:#4ade80;--ok-bg:rgba(74,222,128,0.1);
-      --warn:#fbbf24;--warn-bg:rgba(251,191,36,0.1);
-      --info:#93c5fd;--info-bg:rgba(147,197,253,0.1);
-      --danger:#f87171;
-      --r:10px;--rl:14px;--rxl:18px;
-    }
-    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
-    body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-      background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(124,106,247,.08) 0%,transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 80%,rgba(45,212,191,.05) 0%,transparent 60%)}
-    #root{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:14px}
-    button{outline:none;font-family:'Inter',sans-serif}
-
-    /* Header */
-    .hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
-      padding:12px 16px;background:var(--bg3);border:.5px solid var(--bord2);
-      border-radius:var(--rxl);margin-bottom:12px}
-    .hdr-l{display:flex;align-items:center;gap:12px}
-    .hdr-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;
-      background:linear-gradient(135deg,rgba(124,106,247,.3),rgba(45,212,191,.2));
-      border:.5px solid rgba(124,106,247,.4);display:flex;align-items:center;justify-content:center;font-size:18px}
-    .hdr-h1{font-size:14px;font-weight:600}
-    .hdr-sub{font-size:11px;color:var(--tx2);margin-top:2px}
-    .hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .xp-badge{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
-    .xp-badge.on{background:var(--ok-bg);border:.5px solid rgba(74,222,128,.3);color:var(--ok)}
-    .xp-badge.off{background:var(--warn-bg);border:.5px solid rgba(251,191,36,.3);color:var(--warn)}
-    .lang-btn{display:flex;border-radius:20px;overflow:hidden;border:.5px solid var(--bord2)}
-    .lang-opt{padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer;
-      background:transparent;border:none;color:var(--tx2);transition:all .15s}
-    .lang-opt.on{background:rgba(124,106,247,.25);color:#a78bfa}
-
-    /* Region progress pills */
-    .rpills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
-    .rpill{display:inline-flex;align-items:center;gap:4px;
-      padding:4px 9px;border-radius:20px;font-size:10px;font-weight:500;
-      border:.5px solid var(--bord);background:var(--bg2);color:var(--tx3);transition:all .2s}
-    .rpill.done{color:var(--pc);background:var(--pbg);border-color:var(--pbd)}
-    .rpill.partial{color:var(--warn);background:var(--warn-bg);border-color:rgba(251,191,36,.35)}
-    .rpill-count{font-size:9px;font-weight:700;opacity:.8}
-    .rpill-min{font-size:9px;opacity:.5}
-
-    /* Layout */
-    .layout{display:grid;grid-template-columns:1fr 1.35fr;gap:12px}
-    @media(max-width:640px){.layout{grid-template-columns:1fr}}
-    .card{background:var(--bg2);border:.5px solid var(--bord);border-radius:var(--rl);padding:12px 14px}
-    .card-ttl{font-size:10px;font-weight:600;text-transform:uppercase;
-      letter-spacing:.08em;color:var(--tx3);margin-bottom:10px}
-    .mb10{margin-bottom:10px}
-
-    /* Emblem buttons */
-    .emb-grid{display:flex;flex-wrap:wrap;gap:5px}
-    .emb-btn{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:8px;
-      font-size:11px;cursor:pointer;background:var(--bg2);border:.5px solid var(--bord);
-      color:var(--tx2);transition:all .12s}
-    .emb-btn:hover{border-color:var(--bord2);color:var(--tx)}
-    .emb-btn.on{color:var(--pc);background:var(--pbg);border-color:var(--pbd);font-weight:500}
-    .emb-icon{width:20px;height:20px;border-radius:4px;flex-shrink:0;
-      background:var(--pbg);border:.5px solid var(--pbd);
-      display:flex;align-items:center;justify-content:center;font-size:11px}
-
-    /* Suggestions */
-    .sugg-hdr{font-size:12px;font-weight:500;color:var(--warn);margin-bottom:8px}
-    .sugg-row{display:flex;align-items:center;gap:6px;
-      padding:7px 9px;border-radius:var(--r);margin-bottom:5px;
-      border:.5px solid var(--bord)}
-    .sugg-row:last-child{margin-bottom:0}
-    .sugg-row.top{border-color:var(--warn);background:var(--warn-bg)}
-    .sugg-rank{font-size:10px;color:var(--tx3);min-width:14px;text-align:center}
-    .sugg-picks{display:flex;flex-wrap:wrap;gap:4px;flex:1}
-    .sugg-pick{display:inline-flex;align-items:center;gap:4px;
-      padding:2px 7px;border-radius:6px;font-size:10px;
-      color:var(--pc);background:var(--pbg);border:.5px solid var(--pbd)}
-    .sugg-pick img{width:16px;height:16px;border-radius:3px;object-fit:cover;background:var(--bg3)}
-    .sugg-cost{font-size:9px;font-weight:700}
-    .sugg-total{font-size:11px;color:var(--tx2);white-space:nowrap}
-    .done-box{background:var(--ok-bg);border:.5px solid rgba(74,222,128,.3);
-      border-radius:var(--r);padding:14px;text-align:center;
-      font-size:12px;color:var(--ok);font-weight:500;line-height:1.7;white-space:pre-line}
-    .no-sugg{font-size:12px;color:var(--tx3);text-align:center;padding:20px 0}
-
-    /* Gold filter */
-    .gold-filter{padding:10px 12px;background:var(--bg2);border:.5px solid var(--bord);
-      border-radius:var(--r);margin-bottom:10px}
-    .gold-filter-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .gold-filter-lbl{font-size:11px;color:var(--tx2)}
-    .gold-filter-val{font-size:12px;font-weight:600;color:var(--warn)}
-    .gold-filter-btns{display:flex;flex-wrap:wrap;gap:4px}
-    .gf-btn{padding:3px 9px;border-radius:6px;font-size:11px;cursor:pointer;
-      background:transparent;border:.5px solid var(--bord);color:var(--tx2);transition:all .1s}
-    .gf-btn:hover{border-color:var(--bord2)}
-    .gf-btn.on{background:var(--warn-bg);border-color:rgba(251,191,36,.4);color:var(--warn);font-weight:500}
-
-    /* Champion grid */
-    .search-inp{width:100%;padding:7px 10px;font-size:12px;
-      border-radius:var(--r);border:.5px solid var(--bord2);
-      background:var(--bg3);color:var(--tx);outline:none;margin-bottom:8px}
-    .search-inp:focus{border-color:rgba(124,106,247,.5)}
-    .frow{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
-    .fb{display:flex;align-items:center;gap:3px;
-      padding:3px 8px;border-radius:6px;font-size:10px;cursor:pointer;
-      background:transparent;border:.5px solid var(--bord);color:var(--tx2);transition:all .1s}
-    .fb:hover{border-color:var(--bord2)}
-    .fb.fa{background:var(--bg3);border-color:var(--bord2);color:var(--tx);font-weight:500}
-    .fb.fr{color:var(--pc);border-color:var(--pbd);background:var(--pbg);font-weight:500}
-
-    .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));
-      gap:5px;max-height:450px;overflow-y:auto;padding-right:2px}
-    .cgrid::-webkit-scrollbar{width:3px}
-    .cgrid::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:4px}
-    .cbtn{position:relative;border-radius:var(--r);cursor:pointer;text-align:center;
-      background:var(--bg2);border:.5px solid var(--bord);
-      color:var(--tx2);transition:all .12s;overflow:hidden;padding-bottom:5px}
-    .cbtn:hover{border-color:var(--bord2)}
-    .cbtn.sel{border:1.5px solid var(--pbd);background:var(--pbg);color:var(--pc)}
-    .cbtn.sug{border:1.5px dashed var(--warn);background:var(--warn-bg);color:var(--warn)}
-    .cbtn.exp{opacity:.45}
-    .cbar{position:absolute;top:0;left:0;right:0;height:3px}
-    .cimg-wrap{width:100%;aspect-ratio:1;overflow:hidden;background:var(--bg3);position:relative}
-    .cimg{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .2s}
-    .cbtn:hover .cimg{transform:scale(1.05)}
-    .cname{font-size:9px;font-weight:500;line-height:1.2;margin:3px 3px 0;
-      overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    .cmeta{font-size:8px;opacity:.55;margin-top:1px}
-    .cregions{display:flex;justify-content:center;gap:2px;margin-top:1px}
-    .creg-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-    .sel-badge{position:absolute;top:3px;right:3px;
-      width:13px;height:13px;border-radius:50%;
-      background:var(--pc);display:flex;align-items:center;justify-content:center}
-    .sug-lbl{position:absolute;top:2px;right:2px;
-      padding:1px 3px;border-radius:3px;font-size:7px;font-weight:700;
-      background:var(--warn);color:#000;line-height:1.4}
-
-    .row-btw{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-    .clr-btn{font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer}
-    .c1{color:#9ca3af}.c2{color:#4ade80}.c3{color:#60a5fa}.c4{color:#c084fc}.c5{color:#fbbf24}.c7{color:#f97316}
-  </style>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TFT — Lõi XP 4 Tộc Khu Vực</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0c14;--s1:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);
+  --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);
+  --tx:#e8e6f0;--tx2:#8a87a0;--tx3:#4a4860;
+  --ok:#4ade80;--okb:rgba(74,222,128,.1);--okbd:rgba(74,222,128,.3);
+  --w:#fbbf24;--wb:rgba(251,191,36,.1);--wbd:rgba(251,191,36,.3);
+  --info:#93c5fd;--infob:rgba(147,197,253,.1);
+  --danger:#f87171;--r:10px;--rl:14px;--rxl:18px;
+}
+body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(124,106,247,.07) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(45,212,191,.04) 0%,transparent 60%)}
+#root{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:14px}
+button{outline:none;font-family:"Inter",sans-serif}
+.hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding:12px 16px;background:var(--s2);border:.5px solid var(--b2);border-radius:var(--rxl);margin-bottom:12px}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.hdr-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(124,106,247,.3),rgba(45,212,191,.2));
+  border:.5px solid rgba(124,106,247,.4);display:flex;align-items:center;justify-content:center;font-size:18px}
+.hdr-h1{font-size:14px;font-weight:600}
+.hdr-sub{font-size:11px;color:var(--tx2);margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.xp-badge{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.xp-on{background:var(--okb);border:.5px solid var(--okbd);color:var(--ok)}
+.xp-off{background:var(--wb);border:.5px solid var(--wbd);color:var(--w)}
+.lang-btn{display:flex;border-radius:20px;overflow:hidden;border:.5px solid var(--b2)}
+.lo{padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--tx2);transition:all .15s}
+.lo.on{background:rgba(124,106,247,.25);color:#a78bfa}
+.rpills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.rp{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:500;border:.5px solid var(--b1);background:var(--s1);color:var(--tx3);transition:all .2s}
+.rp.done{color:var(--pc);background:var(--pbg);border-color:var(--pbd)}
+.rp.part{color:var(--w);background:var(--wb);border-color:var(--wbd)}
+.rp-cnt{font-size:9px;font-weight:700}
+.rp-min{font-size:9px;opacity:.45}
+.board-view{background:var(--s1);border:.5px solid var(--b1);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px}
+.bv-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:10px}
+.bv-regs{display:flex;flex-wrap:wrap;gap:10px}
+.bv-reg-hdr{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.bv-reg-name{font-size:10px;font-weight:500}
+.bv-cnt{font-size:9px;padding:1px 5px;border-radius:20px;font-weight:600}
+.bv-cnt.done{background:var(--okb);color:var(--ok);border:.5px solid var(--okbd)}
+.bv-cnt.part{background:var(--wb);color:var(--w);border:.5px solid var(--wbd)}
+.bv-champs{display:flex;flex-wrap:wrap;gap:4px}
+.bv-ch{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;font-size:10px;background:var(--pbg);border:.5px solid var(--pbd);color:var(--pc)}
+.bv-ch img{width:16px;height:16px;border-radius:3px;object-fit:cover;background:var(--s2);flex-shrink:0}
+.layout{display:grid;grid-template-columns:1fr 1.35fr;gap:12px}
+@media(max-width:640px){.layout{grid-template-columns:1fr}}
+.card{background:var(--s1);border:.5px solid var(--b1);border-radius:var(--rl);padding:12px 14px}
+.card-ttl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:10px}
+.mb10{margin-bottom:10px}
+.emb-grid{display:flex;flex-wrap:wrap;gap:5px}
+.eb{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:8px;font-size:11px;cursor:pointer;background:var(--s1);border:.5px solid var(--b1);color:var(--tx2);transition:all .12s}
+.eb:hover{border-color:var(--b2);color:var(--tx)}
+.eb.on{color:var(--pc);background:var(--pbg);border-color:var(--pbd);font-weight:500}
+.eb-icon{width:20px;height:20px;border-radius:4px;flex-shrink:0;background:var(--pbg);border:.5px solid var(--pbd);display:flex;align-items:center;justify-content:center;font-size:11px}
+.gf{background:var(--s1);border:.5px solid var(--b1);border-radius:var(--r);padding:9px 12px;margin-bottom:10px}
+.gf-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.gf-lbl{font-size:11px;color:var(--tx2)}
+.gf-val{font-size:12px;font-weight:600;color:var(--w)}
+.gf-btns{display:flex;flex-wrap:wrap;gap:4px}
+.gfb{padding:3px 9px;border-radius:6px;font-size:11px;cursor:pointer;background:transparent;border:.5px solid var(--b1);color:var(--tx2);transition:all .1s}
+.gfb.on{background:var(--wb);border-color:rgba(251,191,36,.4);color:var(--w);font-weight:500}
+.opt-board{background:var(--s1);border:.5px solid var(--b1);border-radius:var(--rl);padding:12px 14px;margin-bottom:10px}
+.opt-tabs{display:flex;gap:4px;margin-bottom:10px}
+.ot{padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;background:transparent;border:.5px solid var(--b1);color:var(--tx2);transition:all .1s}
+.ot.on{background:var(--s2);border-color:var(--b2);color:var(--tx);font-weight:500}
+.orow{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:var(--r);margin-bottom:5px;border:.5px solid var(--b1)}
+.orow:last-child{margin-bottom:0}
+.orow.top{border-color:var(--info);background:var(--infob)}
+.orank{font-size:10px;color:var(--tx3);min-width:14px;text-align:center}
+.opicks{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.opick{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;font-size:10px;color:var(--pc);background:var(--pbg);border:.5px solid var(--pbd)}
+.opick img{width:16px;height:16px;border-radius:3px;object-fit:cover;background:var(--s2)}
+.ocost{font-size:9px;font-weight:700}
+.ototl{font-size:11px;color:var(--tx2);white-space:nowrap}
+.done-box{background:var(--okb);border:.5px solid var(--okbd);border-radius:var(--r);padding:12px;text-align:center;font-size:12px;color:var(--ok);font-weight:500;line-height:1.7;white-space:pre-line}
+.no-row{font-size:12px;color:var(--tx3);text-align:center;padding:12px 0}
+.sugg-hdr{font-size:12px;font-weight:500;color:var(--w);margin-bottom:8px}
+.srow{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:var(--r);margin-bottom:5px;border:.5px solid var(--b1)}
+.srow:last-child{margin-bottom:0}
+.srow.top{border-color:var(--w);background:var(--wb)}
+.srank{font-size:10px;color:var(--tx3);min-width:14px;text-align:center}
+.spicks{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.spick{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;font-size:10px;color:var(--pc);background:var(--pbg);border:.5px solid var(--pbd)}
+.spick img{width:16px;height:16px;border-radius:3px;object-fit:cover;background:var(--s2)}
+.scost{font-size:9px;font-weight:700}
+.stotal{font-size:11px;color:var(--tx2);white-space:nowrap}
+.search-inp{width:100%;padding:7px 10px;font-size:12px;border-radius:var(--r);border:.5px solid var(--b2);background:var(--s2);color:var(--tx);outline:none;margin-bottom:8px}
+.search-inp:focus{border-color:rgba(124,106,247,.5)}
+.frow{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.fb{display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:6px;font-size:10px;cursor:pointer;background:transparent;border:.5px solid var(--b1);color:var(--tx2);transition:all .1s}
+.fb:hover{border-color:var(--b2)}
+.fb.fa{background:var(--s2);border-color:var(--b2);color:var(--tx);font-weight:500}
+.fb.fr{color:var(--pc);border-color:var(--pbd);background:var(--pbg);font-weight:500}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px;max-height:460px;overflow-y:auto;padding-right:2px}
+.cgrid::-webkit-scrollbar{width:3px}
+.cgrid::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+.cbtn{position:relative;border-radius:var(--r);cursor:pointer;text-align:center;background:var(--s1);border:.5px solid var(--b1);color:var(--tx2);transition:all .12s;overflow:hidden;padding-bottom:5px}
+.cbtn:hover{border-color:var(--b2)}
+.cbtn.sel{border:1.5px solid var(--pbd);background:var(--pbg);color:var(--pc)}
+.cbtn.sug{border:1.5px dashed var(--w);background:var(--wb);color:var(--w)}
+.cbtn.opt{border:1.5px solid var(--info);background:var(--infob);color:var(--info)}
+.cbar{position:absolute;top:0;left:0;right:0;height:3px}
+.cimg-w{width:100%;aspect-ratio:1;overflow:hidden;background:var(--s2)}
+.cimg{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .2s}
+.cbtn:hover .cimg{transform:scale(1.05)}
+.cname{font-size:9px;font-weight:500;line-height:1.2;margin:3px 3px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cmeta{font-size:8px;opacity:.55;margin-top:1px}
+.sel-b{position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:50%;background:var(--pc);display:flex;align-items:center;justify-content:center}
+.lbl-sug{position:absolute;top:2px;right:2px;padding:1px 3px;border-radius:3px;font-size:7px;font-weight:700;background:var(--w);color:#000;line-height:1.4}
+.lbl-opt{position:absolute;top:2px;right:2px;padding:1px 3px;border-radius:3px;font-size:7px;font-weight:700;background:var(--info);color:#000;line-height:1.4}
+.rbetween{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.clr{font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer}
+.c1{color:#9ca3af}.c2{color:#4ade80}.c3{color:#60a5fa}.c4{color:#c084fc}.c5{color:#fbbf24}.c7{color:#f97316}
+</style>
 </head>
-<body>
-<div id="root"></div>
+<body><div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const {useState,useMemo,useCallback}=React;
 const h=React.createElement;
-
-// ── i18n ─────────────────────────────────────────────
 const T={
-  vi:{
-    title:'TFT Lõi XP — 4 Tộc Khu Vực',sub:'Đủ 4 tộc Khu Vực → +4 XP / vòng người chơi',
-    xpOn:'✓ +4 XP / vòng — kích hoạt!',xpOff:n=>`${n} / 4 tộc — +${n>=1?2:0} XP/vòng`,
-    emblems:'Ấn tộc hệ đang có',empfx:'Ấn ',
-    suggs:'Combo rẻ nhất',need:n=>`Cần thêm ${n} tộc`,
-    done:'✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng người chơi.',
-    panel:n=>`Tướng trên bàn (${n})`,
-    search:'Tìm tên tướng...',clear:'Xóa tất cả',all:'Tất cả',gold:'g',
-    noSugg:'Chọn tướng bên phải để xem gợi ý',
-    goldFilter:'Lọc tổng giá vàng ≤',goldAll:'Tất cả',
-    minLabel:'Cần',unlockNote:'🔒 Cần mở khóa',
-    multireg:'Nhiều tộc',
-  },
-  en:{
-    title:'TFT XP Augment — 4 Region Traits',sub:'4 Region traits active → +4 XP per player combat',
-    xpOn:'✓ +4 XP / round — ACTIVE!',xpOff:n=>`${n} / 4 regions — +${n>=1?2:0} XP/round`,
-    emblems:'Region Emblems on board',empfx:'',
-    suggs:'Cheapest combos',need:n=>`Need ${n} more region${n>1?'s':''}`,
-    done:'✓ XP Augment ACTIVE!\nTeam gains +4 XP each player combat.',
-    panel:n=>`Units on board (${n})`,
-    search:'Search champion...',clear:'Clear all',all:'All',gold:'g',
-    noSugg:'Select units on the right to see suggestions',
-    goldFilter:'Filter total cost ≤',goldAll:'Any',
-    minLabel:'Need',unlockNote:'🔒 Unlockable',
-    multireg:'Multi-region',
-  }
+  vi:{title:"TFT Lõi XP — 4 Tộc Khu Vực",sub:"4 tộc Khu Vực → +4 XP / vòng người chơi",xpOn:"✓ +4 XP / vòng — kích hoạt!",xpOff:n=>n+"/4 tộc — +"+(n>=1?2:0)+" XP/vòng",emblems:"Ấn tộc hệ đang có",empfx:"Ấn ",suggs:"Combo rẻ nhất từ bàn hiện tại",need:n=>"Cần thêm "+n+" tộc",done:"✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng đấu người chơi.",panel:n=>"Tướng trên bàn ("+n+")",search:"Tìm tên tướng...",clear:"Xóa tất cả",all:"Tất cả",gold:"g",noSugg:"Chọn tướng để xem gợi ý",goldFilter:"Lọc vàng tối đa",goldAll:"Tất cả",boardTitle:"Đội hình hiện tại",optTitle:"Đội hình đề xuất tối ưu",optTab1:"Từ bàn hiện tại",optTab2:"Tối ưu toàn cục",tooExp:g=>"Không có combo ≤"+g+"g"},
+  en:{title:"TFT XP Augment — 4 Region Traits",sub:"4 unique Region traits → +4 XP per player combat",xpOn:"✓ +4 XP / round — ACTIVE!",xpOff:n=>n+"/4 regions — +"+(n>=1?2:0)+" XP/round",emblems:"Region Emblems on board",empfx:"",suggs:"Cheapest combos from board",need:n=>"Need "+n+" more region"+(n>1?"s":""),done:"✓ XP Augment ACTIVE!\nTeam gains +4 XP each player combat.",panel:n=>"Units on board ("+n+")",search:"Search champion...",clear:"Clear all",all:"All",gold:"g",noSugg:"Select units to see suggestions",goldFilter:"Max gold filter",goldAll:"Any",boardTitle:"Current board",optTitle:"Optimal team suggestions",optTab1:"From current board",optTab2:"Global optimal",tooExp:g=>"No combo within "+g+"g"}
 };
-
-const CC=['','c1','c2','c3','c4','c5','','c7'];
-const CB=['','#9ca3af','#4ade80','#60a5fa','#c084fc','#fbbf24','#fbbf24','#f97316'];
-const DDR='https://ddragon.leagueoflegends.com/cdn/15.6.1/img/champion/';
-const DDR_MAP={
-  illaoi:'Illaoi',graves:'Graves',tf:'TwistedFate',gangplank:'Gangplank',nautilus:'Nautilus',
-  fizz:'Fizz',mf:'MissFortune',tahm:'TahmKench',
-  jarvan:'JarvanIV',sona:'Sona',poppy:'Poppy',xin:'XinZhao',vayne:'Vayne',
-  garen:'Garen',lux:'Lux',galio:'Galio',
-  anivia:'Anivia',ashe:'Ashe',trynd:'Tryndamere',sejuani:'Sejuani',
-  braum:'Braum',lissandra:'Lissandra',volibear:'Volibear',
-  jhin:'Jhin',shen:'Shen',yasuo:'Yasuo',ahri:'Ahri',kennen:'Kennen',
-  wukong:'MonkeyKing',yone:'Yone',yunara:null,sett:'Sett',
-  qiyana:'Qiyana',neeko:'Neeko',milio:'Milio',nidalee:'Nidalee',skarner:'Skarner',
-  briar:'Briar',sion:'Sion',darius:'Darius',draven:'Draven',leblanc:'Leblanc',
-  swain:'Swain',ambessa:'Ambessa',mel:null,
-  caitlyn:'Caitlyn',vi:'Vi',orianna:'Orianna',loris:null,seraphine:'Seraphine',thex:null,
-  viego:'Viego',elise:'Elise',hecarim:'Hecarim',gwen:'Gwen',
-  kalista:'Kalista',thresh:'Thresh',fiddlesticks:'Fiddlesticks',
-  sivir:'Sivir',taliyah:'Taliyah',naafiri:'Naafiri',nasus:'Nasus',
-  renekton:'Renekton',azir:'Azir',xerath:'Xerath',
-  aphelios:'Aphelios',leona:'Leona',zoe:'Zoe',diana:'Diana',taric:'Taric',asol:'AurelionSol',
-  kogmaw:'KogMaw',chogath:'Chogath',reksai:'RekSai',malzahar:'Malzahar',
-  belveth:'Belveth',kaisa:'Kaisa',rifthetrald:null,baron:null,
-};
-
-// Region config: min = minimum champions to ACTIVATE the region trait
+const CC=["","c1","c2","c3","c4","c5","","c7"];
+const CB=["","#9ca3af","#4ade80","#60a5fa","#c084fc","#fbbf24","#fbbf24","#f97316"];
+const DDR="https://ddragon.leagueoflegends.com/cdn/15.6.1/img/champion/";
+const DM={illaoi:"Illaoi",graves:"Graves",tf:"TwistedFate",gangplank:"Gangplank",nautilus:"Nautilus",fizz:"Fizz",mf:"MissFortune",tahm:"TahmKench",jarvan:"JarvanIV",sona:"Sona",poppy:"Poppy",xin:"XinZhao",vayne:"Vayne",garen:"Garen",lux:"Lux",galio:"Galio",anivia:"Anivia",ashe:"Ashe",trynd:"Tryndamere",sejuani:"Sejuani",braum:"Braum",lissandra:"Lissandra",volibear:"Volibear",jhin:"Jhin",shen:"Shen",yasuo:"Yasuo",ahri:"Ahri",kennen:"Kennen",wukong:"MonkeyKing",yone:"Yone",sett:"Sett",qiyana:"Qiyana",neeko:"Neeko",milio:"Milio",nidalee:"Nidalee",skarner:"Skarner",briar:"Briar",sion:"Sion",darius:"Darius",draven:"Draven",leblanc:"Leblanc",swain:"Swain",caitlyn:"Caitlyn",vi:"Vi",orianna:"Orianna",seraphine:"Seraphine",viego:"Viego",elise:"Elise",hecarim:"Hecarim",gwen:"Gwen",kalista:"Kalista",fiddlesticks:"Fiddlesticks",thresh:"Thresh",sivir:"Sivir",taliyah:"Taliyah",naafiri:"Naafiri",nasus:"Nasus",renekton:"Renekton",azir:"Azir",xerath:"Xerath",aphelios:"Aphelios",leona:"Leona",zoe:"Zoe",diana:"Diana",taric:"Taric",asol:"AurelionSol",kogmaw:"KogMaw",chogath:"Chogath",reksai:"RekSai",malzahar:"Malzahar",belveth:"Belveth",kaisa:"Kaisa"};
 const REGIONS=[
-  {id:'Bilgewater',   en:'Bilgewater',  vi:'Bilgewater',  icon:'⚓',min:3,color:'#2dd4bf',bg:'rgba(45,212,191,.13)',bd:'rgba(45,212,191,.42)'},
-  {id:'Demacia',      en:'Demacia',     vi:'Demacia',      icon:'🛡️',min:3,color:'#fbbf24',bg:'rgba(251,191,36,.13)', bd:'rgba(251,191,36,.42)'},
-  {id:'Freljord',     en:'Freljord',    vi:'Freljord',     icon:'❄️',min:3,color:'#93c5fd',bg:'rgba(147,197,253,.13)',bd:'rgba(147,197,253,.42)'},
-  {id:'Ionia',        en:'Ionia',       vi:'Ionia',        icon:'🌸',min:3,color:'#f9a8d4',bg:'rgba(249,168,212,.13)',bd:'rgba(249,168,212,.42)'},
-  {id:'Ixtal',        en:'Ixtal',       vi:'Ixtal',        icon:'🌿',min:3,color:'#6ee7b7',bg:'rgba(110,231,183,.13)',bd:'rgba(110,231,183,.42)'},
-  {id:'Noxus',        en:'Noxus',       vi:'Noxus',        icon:'⚔️',min:3,color:'#fca5a5',bg:'rgba(252,165,165,.13)',bd:'rgba(252,165,165,.42)'},
-  {id:'Piltover',     en:'Piltover',    vi:'Piltover',     icon:'⚙️',min:2,color:'#67e8f9',bg:'rgba(103,232,249,.13)',bd:'rgba(103,232,249,.42)'},
-  {id:'Shadow Isles', en:'Shadow Isles',vi:'Đ. Bóng Đêm', icon:'💀',min:2,color:'#c4b5fd',bg:'rgba(196,181,253,.13)',bd:'rgba(196,181,253,.42)'},
-  {id:'Shurima',      en:'Shurima',     vi:'Shurima',      icon:'☀️',min:2,color:'#fcd34d',bg:'rgba(252,211,77,.13)', bd:'rgba(252,211,77,.42)'},
-  {id:'Targon',       en:'Targon',      vi:'Targon',       icon:'⭐',min:2,color:'#e2e8f0',bg:'rgba(226,232,240,.09)',bd:'rgba(226,232,240,.32)'},
-  {id:'Void',         en:'Void',        vi:'Hư Không',     icon:'👁️',min:2,color:'#a78bfa',bg:'rgba(167,139,250,.13)',bd:'rgba(167,139,250,.42)'},
+  {id:"Bilgewater",en:"Bilgewater",vi:"Bilgewater",icon:"⚓",min:3,color:"#2dd4bf",bg:"rgba(45,212,191,.13)",bd:"rgba(45,212,191,.42)"},
+  {id:"Demacia",en:"Demacia",vi:"Demacia",icon:"🛡️",min:3,color:"#fbbf24",bg:"rgba(251,191,36,.13)",bd:"rgba(251,191,36,.42)"},
+  {id:"Freljord",en:"Freljord",vi:"Freljord",icon:"❄️",min:3,color:"#93c5fd",bg:"rgba(147,197,253,.13)",bd:"rgba(147,197,253,.42)"},
+  {id:"Ionia",en:"Ionia",vi:"Ionia",icon:"🌸",min:3,color:"#f9a8d4",bg:"rgba(249,168,212,.13)",bd:"rgba(249,168,212,.42)"},
+  {id:"Ixtal",en:"Ixtal",vi:"Ixtal",icon:"🌿",min:3,color:"#6ee7b7",bg:"rgba(110,231,183,.13)",bd:"rgba(110,231,183,.42)"},
+  {id:"Noxus",en:"Noxus",vi:"Noxus",icon:"⚔️",min:3,color:"#fca5a5",bg:"rgba(252,165,165,.13)",bd:"rgba(252,165,165,.42)"},
+  {id:"Piltover",en:"Piltover",vi:"Piltover",icon:"⚙️",min:2,color:"#67e8f9",bg:"rgba(103,232,249,.13)",bd:"rgba(103,232,249,.42)"},
+  {id:"Shadow Isles",en:"Shadow Isles",vi:"Đ. Bóng Đêm",icon:"💀",min:2,color:"#c4b5fd",bg:"rgba(196,181,253,.13)",bd:"rgba(196,181,253,.42)"},
+  {id:"Shurima",en:"Shurima",vi:"Shurima",icon:"☀️",min:2,color:"#fcd34d",bg:"rgba(252,211,77,.13)",bd:"rgba(252,211,77,.42)"},
+  {id:"Targon",en:"Targon",vi:"Targon",icon:"⭐",min:1,color:"#e2e8f0",bg:"rgba(226,232,240,.09)",bd:"rgba(226,232,240,.32)"},
+  {id:"Void",en:"Void",vi:"Hư Không",icon:"👁️",min:2,color:"#a78bfa",bg:"rgba(167,139,250,.13)",bd:"rgba(167,139,250,.42)"}
 ];
 const regMap=Object.fromEntries(REGIONS.map(r=>[r.id,r]));
-
-// Champions: r = array of region IDs (most have 1, some have 2)
-// unlock=true means needs to be unlocked first in game
 const CHAMPS=[
-  // Bilgewater (min 3)
-  {id:'illaoi', n:'Illaoi',      c:1,r:['Bilgewater']},
-  {id:'graves', n:'Graves',      c:2,r:['Bilgewater'],unlock:true},
-  {id:'tf',     n:'Twisted Fate',c:2,r:['Bilgewater']},
-  {id:'gangplank',n:'Gangplank', c:3,r:['Bilgewater']},
-  {id:'nautilus',n:'Nautilus',   c:3,r:['Bilgewater']},
-  {id:'fizz',   n:'Fizz',        c:4,r:['Bilgewater'],unlock:true},
-  {id:'mf',     n:'Miss Fortune',c:4,r:['Bilgewater']},
-  {id:'tahm',   n:'Tahm Kench',  c:5,r:['Bilgewater'],unlock:true},
-  // Demacia (min 3)
-  {id:'jarvan', n:'Jarvan IV',   c:1,r:['Demacia']},
-  {id:'sona',   n:'Sona',        c:1,r:['Demacia']},
-  {id:'poppy',  n:'Poppy',       c:2,r:['Demacia'],unlock:true},
-  {id:'xin',    n:'Xin Zhao',    c:2,r:['Demacia','Ionia']}, // ← multi-region!
-  {id:'vayne',  n:'Vayne',       c:3,r:['Demacia']},
-  {id:'garen',  n:'Garen',       c:4,r:['Demacia']},
-  {id:'lux',    n:'Lux',         c:4,r:['Demacia']},
-  {id:'galio',  n:'Galio',       c:5,r:['Demacia'],unlock:true},
-  // Freljord (min 3)
-  {id:'anivia', n:'Anivia',      c:1,r:['Freljord']},
-  {id:'ashe',   n:'Ashe',        c:2,r:['Freljord']},
-  {id:'trynd',  n:'Tryndamere',  c:2,r:['Freljord'],unlock:true},
-  {id:'sejuani',n:'Sejuani',     c:3,r:['Freljord']},
-  {id:'braum',  n:'Braum',       c:4,r:['Freljord']},
-  {id:'lissandra',n:'Lissandra', c:4,r:['Freljord']},
-  {id:'volibear',n:'Volibear',   c:5,r:['Freljord'],unlock:true},
-  // Ionia (min 3) — note Xin Zhao already added above
-  {id:'jhin',   n:'Jhin',        c:1,r:['Ionia']},
-  {id:'shen',   n:'Shen',        c:1,r:['Ionia']},
-  {id:'yasuo',  n:'Yasuo',       c:2,r:['Ionia']},
-  {id:'ahri',   n:'Ahri',        c:3,r:['Ionia']},
-  {id:'kennen', n:'Kennen',      c:3,r:['Ionia'],unlock:true},
-  {id:'wukong', n:'Wukong',      c:4,r:['Ionia']},
-  {id:'yone',   n:'Yone',        c:4,r:['Ionia'],unlock:true},
-  {id:'yunara', n:'Yunara',      c:4,r:['Ionia']},
-  {id:'sett',   n:'Sett',        c:5,r:['Ionia'],unlock:true},
-  // Ixtal (min 3)
-  {id:'qiyana', n:'Qiyana',      c:2,r:['Ixtal']},
-  {id:'neeko',  n:'Neeko',       c:2,r:['Ixtal']},
-  {id:'milio',  n:'Milio',       c:3,r:['Ixtal']},
-  {id:'nidalee',n:'Nidalee',     c:4,r:['Ixtal'],unlock:true},
-  {id:'skarner',n:'Skarner',     c:5,r:['Ixtal'],unlock:true},
-  // Noxus (min 3)
-  {id:'briar',  n:'Briar',       c:1,r:['Noxus']},
-  {id:'sion',   n:'Sion',        c:2,r:['Noxus']},
-  {id:'darius', n:'Darius',      c:3,r:['Noxus'],unlock:true},
-  {id:'draven', n:'Draven',      c:3,r:['Noxus']},
-  {id:'leblanc',n:'LeBlanc',     c:3,r:['Noxus'],unlock:true},
-  {id:'swain',  n:'Swain',       c:4,r:['Noxus']},
-  {id:'ambessa',n:'Ambessa',     c:5,r:['Noxus']},
-  {id:'mel',    n:'Mel',         c:5,r:['Noxus'],unlock:true},
-  // Piltover (min 2)
-  {id:'caitlyn',n:'Caitlyn',     c:1,r:['Piltover']},
-  {id:'vi',     n:'Vi',          c:2,r:['Piltover']},
-  {id:'orianna',n:'Orianna',     c:2,r:['Piltover'],unlock:true},
-  {id:'loris',  n:'Loris',       c:3,r:['Piltover']},
-  {id:'seraphine',n:'Seraphine', c:4,r:['Piltover']},
-  {id:'thex',   n:'T-Hex',       c:5,r:['Piltover'],unlock:true},
-  // Shadow Isles (min 2)
-  {id:'viego',  n:'Viego',       c:1,r:['Shadow Isles']},
-  {id:'elise',  n:'Elise',       c:2,r:['Shadow Isles'],unlock:true},
-  {id:'hecarim',n:'Hecarim',     c:3,r:['Shadow Isles'],unlock:true},
-  {id:'gwen',   n:'Gwen',        c:3,r:['Shadow Isles'],unlock:true},
-  {id:'kalista',n:'Kalista',     c:4,r:['Shadow Isles'],unlock:true},
-  {id:'fiddlesticks',n:'Fiddlesticks',c:5,r:['Shadow Isles']},
-  {id:'thresh', n:'Thresh',      c:5,r:['Shadow Isles'],unlock:true},
-  // Shurima (min 2)
-  {id:'sivir',  n:'Sivir',       c:1,r:['Shurima']},
-  {id:'taliyah',n:'Taliyah',     c:2,r:['Shurima']},
-  {id:'naafiri',n:'Naafiri',     c:2,r:['Shurima']},
-  {id:'nasus',  n:'Nasus',       c:3,r:['Shurima'],unlock:true},
-  {id:'renekton',n:'Renekton',   c:4,r:['Shurima'],unlock:true},
-  {id:'azir',   n:'Azir',        c:5,r:['Shurima']},
-  {id:'xerath', n:'Xerath',      c:5,r:['Shurima'],unlock:true},
-  // Targon (min 2 — champions are "traitless" but region counts)
-  {id:'aphelios',n:'Aphelios',   c:2,r:['Targon']},
-  {id:'leona',  n:'Leona',       c:3,r:['Targon']},
-  {id:'zoe',    n:'Zoe',         c:3,r:['Targon']},
-  {id:'diana',  n:'Diana',       c:4,r:['Targon']},
-  {id:'taric',  n:'Taric',       c:4,r:['Targon']},
-  {id:'asol',   n:'Aurelion Sol',c:7,r:['Targon'],unlock:true},
-  // Void (min 2)
-  {id:'kogmaw', n:"Kog'Maw",     c:1,r:['Void']},
-  {id:'chogath',n:"Cho'Gath",    c:2,r:['Void']},
-  {id:'reksai', n:"Rek'Sai",     c:2,r:['Void'],unlock:true},
-  {id:'malzahar',n:'Malzahar',   c:3,r:['Void']},
-  {id:'belveth',n:"Bel'Veth",    c:4,r:['Void'],unlock:true},
-  {id:'kaisa',  n:"Kai'Sa",      c:4,r:['Void'],unlock:true},
+  {id:"illaoi",n:"Illaoi",c:1,r:["Bilgewater"]},{id:"graves",n:"Graves",c:2,r:["Bilgewater"],u:1},{id:"tf",n:"Twisted Fate",c:2,r:["Bilgewater"]},{id:"gangplank",n:"Gangplank",c:3,r:["Bilgewater"]},{id:"nautilus",n:"Nautilus",c:3,r:["Bilgewater"]},{id:"fizz",n:"Fizz",c:4,r:["Bilgewater"],u:1},{id:"mf",n:"Miss Fortune",c:4,r:["Bilgewater"]},{id:"tahm",n:"Tahm Kench",c:5,r:["Bilgewater"],u:1},
+  {id:"jarvan",n:"Jarvan IV",c:1,r:["Demacia"]},{id:"sona",n:"Sona",c:1,r:["Demacia"]},{id:"poppy",n:"Poppy",c:2,r:["Demacia"],u:1},{id:"xin",n:"Xin Zhao",c:2,r:["Demacia","Ionia"]},{id:"vayne",n:"Vayne",c:3,r:["Demacia"]},{id:"garen",n:"Garen",c:4,r:["Demacia"]},{id:"lux",n:"Lux",c:4,r:["Demacia"]},{id:"galio",n:"Galio",c:5,r:["Demacia"],u:1},
+  {id:"anivia",n:"Anivia",c:1,r:["Freljord"]},{id:"ashe",n:"Ashe",c:2,r:["Freljord"]},{id:"trynd",n:"Tryndamere",c:2,r:["Freljord"],u:1},{id:"sejuani",n:"Sejuani",c:3,r:["Freljord"]},{id:"braum",n:"Braum",c:4,r:["Freljord"]},{id:"lissandra",n:"Lissandra",c:4,r:["Freljord"]},{id:"volibear",n:"Volibear",c:5,r:["Freljord"],u:1},
+  {id:"jhin",n:"Jhin",c:1,r:["Ionia"]},{id:"shen",n:"Shen",c:1,r:["Ionia"]},{id:"yasuo",n:"Yasuo",c:2,r:["Ionia"]},{id:"ahri",n:"Ahri",c:3,r:["Ionia"]},{id:"kennen",n:"Kennen",c:3,r:["Ionia"],u:1},{id:"wukong",n:"Wukong",c:4,r:["Ionia"]},{id:"yone",n:"Yone",c:4,r:["Ionia"],u:1},{id:"yunara",n:"Yunara",c:4,r:["Ionia"]},{id:"sett",n:"Sett",c:5,r:["Ionia"],u:1},
+  {id:"qiyana",n:"Qiyana",c:1,r:["Ixtal"]},{id:"neeko",n:"Neeko",c:2,r:["Ixtal"]},{id:"milio",n:"Milio",c:3,r:["Ixtal"]},{id:"nidalee",n:"Nidalee",c:4,r:["Ixtal"],u:1},{id:"skarner",n:"Skarner",c:4,r:["Ixtal"],u:1},{id:"brock",n:"Brock",c:7,r:["Ixtal"],u:1},
+  {id:"briar",n:"Briar",c:1,r:["Noxus"]},{id:"sion",n:"Sion",c:2,r:["Noxus"]},{id:"darius",n:"Darius",c:3,r:["Noxus"],u:1},{id:"draven",n:"Draven",c:3,r:["Noxus"]},{id:"leblanc",n:"LeBlanc",c:3,r:["Noxus"],u:1},{id:"ambessa",n:"Ambessa",c:4,r:["Noxus"]},{id:"swain",n:"Swain",c:4,r:["Noxus"]},{id:"mel",n:"Mel",c:5,r:["Noxus"],u:1},
+  {id:"caitlyn",n:"Caitlyn",c:1,r:["Piltover"]},{id:"vi",n:"Vi",c:2,r:["Piltover"]},{id:"orianna",n:"Orianna",c:2,r:["Piltover"],u:1},{id:"loris",n:"Loris",c:3,r:["Piltover"]},{id:"seraphine",n:"Seraphine",c:4,r:["Piltover"]},{id:"thex",n:"T-Hex",c:5,r:["Piltover"],u:1},
+  {id:"viego",n:"Viego",c:1,r:["Shadow Isles"]},{id:"elise",n:"Elise",c:2,r:["Shadow Isles"],u:1},{id:"hecarim",n:"Hecarim",c:3,r:["Shadow Isles"],u:1},{id:"gwen",n:"Gwen",c:3,r:["Shadow Isles"],u:1},{id:"kalista",n:"Kalista",c:4,r:["Shadow Isles"],u:1},{id:"fiddlesticks",n:"Fiddlesticks",c:5,r:["Shadow Isles"]},{id:"thresh",n:"Thresh",c:5,r:["Shadow Isles"],u:1},
+  {id:"sivir",n:"Sivir",c:1,r:["Shurima"]},{id:"taliyah",n:"Taliyah",c:2,r:["Shurima"]},{id:"naafiri",n:"Naafiri",c:2,r:["Shurima"]},{id:"nasus",n:"Nasus",c:3,r:["Shurima"],u:1},{id:"renekton",n:"Renekton",c:4,r:["Shurima"],u:1},{id:"azir",n:"Azir",c:5,r:["Shurima"]},{id:"xerath",n:"Xerath",c:5,r:["Shurima"],u:1},
+  {id:"aphelios",n:"Aphelios",c:2,r:["Targon"]},{id:"leona",n:"Leona",c:3,r:["Targon"]},{id:"zoe",n:"Zoe",c:3,r:["Targon"]},{id:"diana",n:"Diana",c:4,r:["Targon"]},{id:"taric",n:"Taric",c:4,r:["Targon"]},{id:"asol",n:"Aurelion Sol",c:7,r:["Targon"],u:1},
+  {id:"kogmaw",n:"Kog'Maw",c:1,r:["Void"]},{id:"chogath",n:"Cho'Gath",c:2,r:["Void"]},{id:"reksai",n:"Rek'Sai",c:2,r:["Void"],u:1},{id:"malzahar",n:"Malzahar",c:3,r:["Void"]},{id:"belveth",n:"Bel'Veth",c:4,r:["Void"],u:1},{id:"kaisa",n:"Kai'Sa",c:4,r:["Void"],u:1},{id:"riftherald",n:"Rift Herald",c:4,r:["Void"],u:1},{id:"baron",n:"Baron Nashor",c:7,r:["Void"],u:1}
 ];
-
 const champMap=Object.fromEntries(CHAMPS.map(c=>[c.id,c]));
-const GOLD_OPTS=[6,8,10,12,15,99];
-
-function getCounts(sel,emblems){
-  const c={};
-  REGIONS.forEach(r=>{c[r.id]=0;});
-  sel.forEach(id=>{
-    const ch=champMap[id];
-    if(ch)ch.r.forEach(rid=>{c[rid]=(c[rid]||0)+1;});
-  });
-  emblems.forEach(rid=>{c[rid]=(c[rid]||0)+1;});
-  return c;
+function getCounts(sel,emblems){const c={};REGIONS.forEach(r=>{c[r.id]=0;});sel.forEach(id=>{const ch=champMap[id];if(ch)ch.r.forEach(rid=>{c[rid]=(c[rid]||0)+1;});});emblems.forEach(rid=>{c[rid]=(c[rid]||0)+1;});return c;}
+function getActive(counts){return REGIONS.filter(r=>counts[r.id]>=r.min).map(r=>r.id);}
+function combs(arr,k){if(k===0)return[[]];if(arr.length<k)return[];const[f,...rest]=arr;return[...combs(rest,k-1).map(c=>[f,...c]),...combs(rest,k)];}
+function analyze(sel,emblems,maxG){
+  const counts=getCounts(sel,emblems);const active=getActive(counts);
+  if(active.length>=4)return{done:true,active,counts};
+  const need=4-active.length;const notActive=REGIONS.filter(r=>!active.includes(r.id));
+  const rc={};
+  notActive.forEach(r=>{const already=counts[r.id]||0;const sn=r.min-already;const avail=CHAMPS.filter(c=>c.r.includes(r.id)&&!sel.has(c.id)).sort((a,b)=>a.c-b.c);if(avail.length<sn){rc[r.id]=null;return;}const picks=avail.slice(0,sn);rc[r.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0)};});
+  const viable=notActive.filter(r=>rc[r.id]!==null);
+  const suggs=combs(viable,need).map(combo=>{const parts=combo.map(r=>({...rc[r.id],region:r}));const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;return{parts,total};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,6);
+  return{done:false,active,counts,need,suggs};
 }
-
-function combos(arr,k){
-  if(k===0)return[[]];
-  if(arr.length<k)return[];
-  const[f,...rest]=arr;
-  return[...combos(rest,k-1).map(c=>[f,...c]),...combos(rest,k)];
+function globalOpt(maxG){
+  const rc={};REGIONS.forEach(r=>{const avail=CHAMPS.filter(c=>c.r.includes(r.id)).sort((a,b)=>a.c-b.c);if(avail.length<r.min){rc[r.id]=null;return;}const picks=avail.slice(0,r.min);rc[r.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0),region:r};});
+  const viable=REGIONS.filter(r=>rc[r.id]!==null);
+  return combs(viable,4).map(combo=>{const parts=combo.map(r=>rc[r.id]);const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;return{parts,total};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,5);
 }
-
-function analyze(sel,emblems,maxGold){
-  const counts=getCounts(sel,emblems);
-  // Which regions are active (count >= min)?
-  const active=REGIONS.filter(r=>counts[r.id]>=r.min);
-  if(active.length>=4)return{done:true,active:active.map(r=>r.id),counts};
-
-  // For each non-active region, compute cheapest way to activate it
-  // (considering already-on-board champs that don't yet count toward this region)
-  const notActive=REGIONS.filter(r=>counts[r.id]<r.min);
-  
-  // For each not-active region, find cheapest picks needed
-  const regionCost={};
-  notActive.forEach(reg=>{
-    const alreadyHave=counts[reg.id]||0;
-    const need=reg.min-alreadyHave;
-    // Available champs from this region not yet on board
-    const avail=CHAMPS.filter(c=>c.r.includes(reg.id)&&!sel.has(c.id))
-      .sort((a,b)=>a.c-b.c);
-    if(avail.length<need){regionCost[reg.id]=null;return;}
-    const picks=avail.slice(0,need);
-    regionCost[reg.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0),need};
-  });
-
-  const stillNeed=4-active.length;
-  // Generate combos of regions to activate
-  const candidates=notActive.filter(r=>regionCost[r.id]!==null);
-  const allCombos=combos(candidates,stillNeed)
-    .map(combo=>{
-      const parts=combo.map(r=>regionCost[r.id]);
-      const total=parts.reduce((s,p)=>s+p.cost,0);
-      if(maxGold<99&&total>maxGold)return null;
-      return{regions:combo.map(r=>r.id),parts,total};
-    })
-    .filter(Boolean)
-    .sort((a,b)=>a.total-b.total)
-    .slice(0,8);
-
-  return{done:false,active:active.map(r=>r.id),counts,need:stillNeed,suggs:allCombos};
+function ChampImg({id,size,radius}){
+  const[err,setErr]=useState(false);const url=DM[id]?DDR+DM[id]+".png":null;
+  const ch=champMap[id];const rg=ch?regMap[ch.r[0]]:null;
+  if(!url||err)return h("div",{style:{width:size||"100%",height:size||"100%",borderRadius:radius||0,background:rg?.bg||"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}},rg?.icon||"?");
+  return h("img",{src:url,alt:id,style:{width:size||"100%",height:size||"100%",borderRadius:radius||0,objectFit:"cover",objectPosition:"top",display:"block"},onError:()=>setErr(true)});
 }
-
-// ── ChampImg ──────────────────────────────────────────
-function ChampImg({id,size='100%',radius=0}){
-  const[err,setErr]=useState(false);
-  const url=DDR_MAP[id]?DDR+DDR_MAP[id]+'.png':null;
-  const ch=champMap[id];
-  const rg=ch?regMap[ch.r[0]]:null;
-  if(!url||err)return h('div',{style:{width:size,height:size,borderRadius:radius,
-    background:rg?.bg||'rgba(255,255,255,.05)',display:'flex',
-    alignItems:'center',justifyContent:'center',fontSize:16}},rg?.icon||'?');
-  return h('img',{src:url,alt:id,
-    style:{width:size,height:size,borderRadius:radius,objectFit:'cover',
-      objectPosition:'top',display:'block'},
-    onError:()=>setErr(true)});
+function PickChip({ch,cls,imgSize}){
+  const rg=regMap[ch.r[0]];
+  return h("div",{className:cls,style:{"--pc":rg.color,"--pbg":rg.bg,"--pbd":rg.bd}},
+    h(ChampImg,{id:ch.id,size:imgSize||"16px",radius:3}),
+    h("span",{className:(cls.includes("opick")?"ocost ":"scost ")+CC[ch.c]},ch.c+"★"),
+    ch.n,ch.r.length>1&&h("span",{style:{fontSize:8,opacity:.6}}," ✦"),
+    h("span",{style:{fontSize:9,opacity:.5}}," "+rg.icon)
+  );
 }
-
+function BoardView({sel,counts,active,lang}){
+  const t=T[lang];const grouped={};
+  sel.forEach(id=>{const ch=champMap[id];if(!ch)return;const rid=ch.r[0];if(!grouped[rid])grouped[rid]=[];grouped[rid].push(ch);});
+  const rids=Object.keys(grouped);if(!rids.length)return null;
+  return h("div",{className:"board-view"},
+    h("div",{className:"bv-title"},t.boardTitle+" — "+sel.size+" champs, "+active.length+"/4 regions"),
+    h("div",{className:"bv-regs"},
+      rids.map(rid=>{
+        const rg=regMap[rid];if(!rg)return null;const cnt=counts[rid]||0;const done=cnt>=rg.min;
+        return h("div",{key:rid},
+          h("div",{className:"bv-reg-hdr"},
+            h("span",{className:"bv-reg-name",style:{color:rg.color}},rg.icon+" "+(lang==="vi"?rg.vi:rg.en)),
+            h("span",{className:"bv-cnt "+(done?"done":"part")},cnt+"/"+rg.min)
+          ),
+          h("div",{className:"bv-champs"},
+            grouped[rid].map(ch=>h("div",{key:ch.id,className:"bv-ch",style:{"--pc":rg.color,"--pbg":rg.bg,"--pbd":rg.bd}},
+              h(ChampImg,{id:ch.id,size:"16px",radius:3}),ch.n
+            ))
+          )
+        );
+      })
+    )
+  );
+}
 function App(){
-  const[lang,setLang]=useState('vi');
-  const[sel,setSel]=useState(new Set());
-  const[emblems,setEmblems]=useState(new Set());
-  const[filterR,setFilterR]=useState('all');
-  const[search,setSearch]=useState('');
-  const[maxGold,setMaxGold]=useState(99);
+  const[lang,setLang]=useState("vi");const[sel,setSel]=useState(new Set());const[emblems,setEmblems]=useState(new Set());
+  const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);
   const t=T[lang];
-
-  const result=useMemo(()=>analyze(sel,emblems,maxGold),[sel,emblems,maxGold]);
+  const result=useMemo(()=>analyze(sel,emblems,maxG),[sel,emblems,maxG]);
+  const gopt=useMemo(()=>globalOpt(maxG),[maxG]);
   const counts=useMemo(()=>getCounts(sel,emblems),[sel,emblems]);
-  const topIds=useMemo(()=>{
-    if(result.done||!result.suggs?.length)return new Set();
-    return new Set(result.suggs[0].parts.flatMap(p=>p.picks.map(c=>c.id)));
-  },[result]);
-
-  const filtered=useMemo(()=>CHAMPS.filter(c=>
-    (filterR==='all'||c.r.includes(filterR))&&
-    (!search||c.n.toLowerCase().includes(search.toLowerCase()))
-  ),[filterR,search]);
-
+  const active=useMemo(()=>getActive(counts),[counts]);
+  const suggIds=useMemo(()=>{if(result.done||!result.suggs?.length)return new Set();return new Set(result.suggs[0].parts.flatMap(p=>p.picks.map(c=>c.id)));},[result]);
+  const goptIds=useMemo(()=>{if(!gopt.length)return new Set();return new Set(gopt[0].parts.flatMap(p=>p.picks.map(c=>c.id)));},[gopt]);
+  const filtered=useMemo(()=>CHAMPS.filter(c=>(filterR==="all"||c.r.includes(filterR))&&(!search||c.n.toLowerCase().includes(search.toLowerCase()))),[filterR,search]);
   const toggle=useCallback(id=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;}),[]);
   const toggleE=useCallback(r=>setEmblems(p=>{const n=new Set(p);n.has(r)?n.delete(r):n.add(r);return n;}),[]);
   const clearAll=()=>{setSel(new Set());setEmblems(new Set());};
-
-  const rname=r=>lang==='vi'?r.vi:r.en;
-  const activeCount=result.active?.length||0;
-
-  return h('div',null,
-    // Header
-    h('div',{className:'hdr'},
-      h('div',{className:'hdr-l'},
-        h('div',{className:'hdr-icon'},'⚡'),
-        h('div',null,h('div',{className:'hdr-h1'},t.title),h('div',{className:'hdr-sub'},t.sub))
-      ),
-      h('div',{className:'hdr-r'},
-        h('div',{className:'xp-badge '+(activeCount>=4?'on':'off')},
-          activeCount>=4?t.xpOn:t.xpOff(activeCount)
-        ),
-        h('div',{className:'lang-btn'},
-          h('button',{className:'lang-opt'+(lang==='vi'?' on':''),onClick:()=>setLang('vi')},'VI'),
-          h('button',{className:'lang-opt'+(lang==='en'?' on':''),onClick:()=>setLang('en')},'EN')
-        )
+  const rname=r=>lang==="vi"?r.vi:r.en;
+  const GOLDS=[6,8,10,12,15,99];
+  const optRows=optTab===0?(result.done?[]:result.suggs||[]):gopt;
+  return h("div",null,
+    h("div",{className:"hdr"},
+      h("div",{className:"hdr-l"},h("div",{className:"hdr-icon"},"⚡"),h("div",null,h("div",{className:"hdr-h1"},t.title),h("div",{className:"hdr-sub"},t.sub))),
+      h("div",{className:"hdr-r"},
+        h("div",{className:"xp-badge "+(active.length>=4?"xp-on":"xp-off")},active.length>=4?t.xpOn:t.xpOff(active.length)),
+        h("div",{className:"lang-btn"},h("button",{className:"lo"+(lang==="vi"?" on":""),onClick:()=>setLang("vi")},"VI"),h("button",{className:"lo"+(lang==="en"?" on":""),onClick:()=>setLang("en")},"EN"))
       )
     ),
-
-    // Region progress pills
-    h('div',{className:'rpills'},
-      REGIONS.map(r=>{
-        const cnt=counts[r.id]||0;
-        const isDone=cnt>=r.min;
-        const isPartial=cnt>0&&!isDone;
-        const cls='rpill'+(isDone?' done':isPartial?' partial':'');
-        const st=isDone?{'--pc':r.color,'--pbg':r.bg,'--pbd':r.bd}:{};
-        return h('div',{key:r.id,className:cls,style:st},
-          r.icon,' ',rname(r),' ',
-          h('span',{className:'rpill-count'},cnt),
-          h('span',{className:'rpill-min'},'/'+r.min)
-        );
-      })
-    ),
-
-    h('div',{className:'layout'},
-
-      // Left col
-      h('div',null,
-        // Emblems
-        h('div',{className:'card mb10'},
-          h('div',{className:'card-ttl'},t.emblems),
-          h('div',{className:'emb-grid'},
-            REGIONS.map(r=>{
-              const on=emblems.has(r.id);
-              return h('button',{key:r.id,
-                className:'emb-btn'+(on?' on':''),
-                style:{'--pc':r.color,'--pbg':r.bg,'--pbd':r.bd},
-                onClick:()=>toggleE(r.id)},
-                h('span',{className:'emb-icon',style:{'--pbg':r.bg,'--pbd':r.bd}},r.icon),
-                (lang==='vi'?t.empfx:'')+rname(r)
-              );
-            })
-          )
-        ),
-
-        // Gold filter
-        h('div',{className:'gold-filter mb10'},
-          h('div',{className:'gold-filter-top'},
-            h('span',{className:'gold-filter-lbl'},t.goldFilter),
-            h('span',{className:'gold-filter-val'},maxGold>=99?t.goldAll:maxGold+t.gold)
-          ),
-          h('div',{className:'gold-filter-btns'},
-            GOLD_OPTS.map(g=>h('button',{key:g,
-              className:'gf-btn'+(maxGold===g?' on':''),
-              onClick:()=>setMaxGold(g)},
-              g>=99?t.goldAll:('≤'+g+t.gold)
-            ))
-          )
-        ),
-
-        // Suggestions
-        h('div',{className:'card'},
-          result.done
-            ? h('div',{className:'done-box'},t.done)
-            : h('div',null,
-                h('div',{className:'sugg-hdr'},
-                  result.need?t.need(result.need)+' — '+t.suggs:t.suggs
-                ),
-                result.suggs?.length
-                  ? result.suggs.map((sg,i)=>
-                      h('div',{key:i,className:'sugg-row'+(i===0?' top':'')},
-                        h('span',{className:'sugg-rank'},i===0?'★':i+1),
-                        h('div',{className:'sugg-picks'},
-                          sg.parts.flatMap(p=>p.picks).map(ch=>{
-                            const rg=regMap[ch.r[0]];
-                            return h('div',{key:ch.id,className:'sugg-pick',
-                              style:{'--pc':rg.color,'--pbg':rg.bg,'--pbd':rg.bd}},
-                              h(ChampImg,{id:ch.id,size:'16px',radius:3}),
-                              h('span',{className:'sugg-cost '+CC[ch.c]},ch.c+'★'),
-                              ch.n,
-                              ch.r.length>1&&h('span',{style:{fontSize:8,opacity:.6}},' ✦'),
-                              h('span',{style:{fontSize:9,opacity:.55}},' '+rg.icon)
-                            );
-                          })
-                        ),
-                        h('span',{className:'sugg-total'},sg.total+t.gold)
-                      )
-                    )
-                  : h('div',{className:'no-sugg'},
-                      result.suggs&&result.suggs.length===0&&maxGold<99
-                        ? (lang==='vi'?'Không có combo ≤'+maxGold+t.gold+'. Thử tăng giới hạn.':'No combos ≤'+maxGold+t.gold+'. Try raising the limit.')
-                        : t.noSugg
-                    )
-              )
+    h("div",{className:"rpills"},REGIONS.map(r=>{const cnt=counts[r.id]||0;const done=cnt>=r.min,part=cnt>0&&!done;return h("div",{key:r.id,className:"rp"+(done?" done":part?" part":""),style:done?{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd}:{}},r.icon," ",rname(r)," ",h("span",{className:"rp-cnt"},cnt),h("span",{className:"rp-min"},"/"+r.min));})),
+    h(BoardView,{sel,counts,active,lang}),
+    h("div",{className:"layout"},
+      h("div",null,
+        h("div",{className:"card mb10"},h("div",{className:"card-ttl"},t.emblems),h("div",{className:"emb-grid"},REGIONS.map(r=>{const on=emblems.has(r.id);return h("button",{key:r.id,className:"eb"+(on?" on":""),style:{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd},onClick:()=>toggleE(r.id)},h("span",{className:"eb-icon",style:{"--pbg":r.bg,"--pbd":r.bd}},r.icon),(lang==="vi"?t.empfx:"")+rname(r));}))),
+        h("div",{className:"gf mb10"},h("div",{className:"gf-top"},h("span",{className:"gf-lbl"},t.goldFilter),h("span",{className:"gf-val"},maxG>=99?t.goldAll:"≤"+maxG+"g")),h("div",{className:"gf-btns"},GOLDS.map(g=>h("button",{key:g,className:"gfb"+(maxG===g?" on":""),onClick:()=>setMaxG(g)},g>=99?t.goldAll:"≤"+g+"g")))),
+        h("div",{className:"opt-board"},
+          h("div",{className:"card-ttl"},t.optTitle),
+          h("div",{className:"opt-tabs"},h("button",{className:"ot"+(optTab===0?" on":""),onClick:()=>setOptTab(0)},t.optTab1),h("button",{className:"ot"+(optTab===1?" on":""),onClick:()=>setOptTab(1)},t.optTab2)),
+          optTab===0&&result.done
+            ? h("div",{className:"done-box",style:{fontSize:11,padding:10}},t.done)
+            : optRows.length>0
+              ? optRows.map((row,i)=>h("div",{key:i,className:"orow"+(i===0?" top":"")},h("span",{className:"orank"},i===0?"★":i+1),h("div",{className:"opicks"},row.parts.flatMap(p=>p.picks).map(ch=>h(PickChip,{key:ch.id,ch,cls:"opick",imgSize:"16px"}))),h("span",{className:"ototl"},row.total+"g")))
+              : h("div",{className:"no-row"},maxG<99?t.tooExp(maxG):t.noSugg)
         )
       ),
-
-      // Right col: champ grid
-      h('div',{className:'card'},
-        h('div',{className:'row-btw'},
-          h('div',{className:'card-ttl',style:{margin:0}},t.panel(sel.size)),
-          (sel.size+emblems.size>0)&&h('button',{className:'clr-btn',onClick:clearAll},t.clear)
-        ),
-        h('input',{className:'search-inp',placeholder:t.search,
-          value:search,onChange:e=>setSearch(e.target.value)}),
-        h('div',{className:'frow'},
-          h('button',{className:'fb'+(filterR==='all'?' fa':''),onClick:()=>setFilterR('all')},t.all),
-          REGIONS.map(r=>h('button',{key:r.id,
-            className:'fb'+(filterR===r.id?' fr':''),
-            style:filterR===r.id?{'--pc':r.color,'--pbg':r.bg,'--pbd':r.bd}:{},
-            onClick:()=>setFilterR(filterR===r.id?'all':r.id)},
-            r.icon,' ',rname(r),' ',
-            h('span',{style:{fontSize:9,opacity:.6,marginLeft:1}},
-              (counts[r.id]||0)+'/'+r.min
-            )
-          ))
-        ),
-        h('div',{className:'cgrid'},
-          filtered.map(ch=>{
-            const isSel=sel.has(ch.id);
-            const isSug=topIds.has(ch.id)&&!isSel;
-            const rg=regMap[ch.r[0]];
-            return h('button',{key:ch.id,
-              className:'cbtn'+(isSel?' sel':isSug?' sug':ch.unlock?' exp':''),
-              style:{'--pc':rg.color,'--pbg':rg.bg,'--pbd':rg.bd},
-              onClick:()=>toggle(ch.id),
-              title:ch.unlock?(lang==='vi'?'Cần mở khóa':'Needs unlock'):ch.n
-            },
-              h('div',{className:'cbar',style:{background:CB[ch.c]}}),
-              h('div',{className:'cimg-wrap'},h(ChampImg,{id:ch.id,size:'100%'})),
-              h('div',{className:'cname'},ch.n),
-              h('div',{className:'cmeta'},
-                h('span',{className:CC[ch.c]},'★'.repeat(Math.min(ch.c,5))),
-                ' ',
-                // Show region dots if multi-region
-                ch.r.length>1
-                  ? h('span',{style:{fontSize:8}}, ch.r.map(rid=>regMap[rid]?.icon).join(''))
-                  : rg.icon
-              ),
-              isSel&&h('div',{className:'sel-badge'},
-                h('svg',{viewBox:'0 0 10 10',width:8,height:8},
-                  h('polyline',{points:'2,5 4,8 8,2',stroke:'#000',strokeWidth:1.5,fill:'none',strokeLinecap:'round'})
-                )
-              ),
-              isSug&&h('div',{className:'sug-lbl'},lang==='vi'?'GỢI Ý':'PICK'),
-              ch.unlock&&!isSel&&h('div',{style:{position:'absolute',bottom:3,right:3,fontSize:8}},'🔒')
-            );
-          })
-        )
+      h("div",{className:"card"},
+        h("div",{className:"rbetween"},h("div",{className:"card-ttl",style:{margin:0}},t.panel(sel.size)),(sel.size+emblems.size>0)&&h("button",{className:"clr",onClick:clearAll},t.clear)),
+        h("input",{className:"search-inp",placeholder:t.search,value:search,onChange:e=>setSearch(e.target.value)}),
+        h("div",{className:"frow"},h("button",{className:"fb"+(filterR==="all"?" fa":""),onClick:()=>setFilterR("all")},t.all),REGIONS.map(r=>{const act=filterR===r.id;const cnt=counts[r.id]||0;return h("button",{key:r.id,className:"fb"+(act?" fr":""),style:act?{"--pc":r.color,"--pbg":r.bg,"--pbd":r.bd}:{},onClick:()=>setFilterR(filterR===r.id?"all":r.id)},r.icon," ",rname(r)," ",h("span",{style:{fontSize:9,opacity:.55}},cnt+"/"+r.min));})),
+        h("div",{className:"cgrid"},filtered.map(ch=>{
+          const isSel=sel.has(ch.id),isSug=suggIds.has(ch.id)&&!isSel,isOpt=goptIds.has(ch.id)&&!isSel&&!isSug;
+          const rg=regMap[ch.r[0]];
+          return h("button",{key:ch.id,className:"cbtn"+(isSel?" sel":isSug?" sug":isOpt?" opt":""),style:{"--pc":rg.color,"--pbg":rg.bg,"--pbd":rg.bd},onClick:()=>toggle(ch.id),title:ch.n+(ch.u?" (unlock)":"")+(ch.r.length>1?" ["+ch.r.join("+")+ "]":"")},
+            h("div",{className:"cbar",style:{background:CB[ch.c]}}),
+            h("div",{className:"cimg-w"},h(ChampImg,{id:ch.id})),
+            h("div",{className:"cname"},ch.n),
+            h("div",{className:"cmeta"},h("span",{className:CC[ch.c]},"★".repeat(Math.min(ch.c,5)))," ",ch.r.length>1?h("span",{style:{fontSize:8}},ch.r.map(rid=>regMap[rid]?.icon||"").join("")):rg.icon),
+            isSel&&h("div",{className:"sel-b"},h("svg",{viewBox:"0 0 10 10",width:8,height:8},h("polyline",{points:"2,5 4,8 8,2",stroke:"#000",strokeWidth:1.5,fill:"none",strokeLinecap:"round"}))),
+            isSug&&h("div",{className:"lbl-sug"},lang==="vi"?"GỢI Ý":"PICK"),
+            isOpt&&h("div",{className:"lbl-opt"},lang==="vi"?"TỐI ƯU":"OPT"),
+            ch.u&&!isSel&&h("div",{style:{position:"absolute",bottom:2,right:3,fontSize:8}},"🔒")
+          );
+        }))
       )
     )
   );
 }
-
-ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
 </script>
 </body>
 </html>
