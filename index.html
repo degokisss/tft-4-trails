@@ -132,8 +132,8 @@ button{outline:none;font-family:"Inter",sans-serif}
 const {useState,useMemo,useCallback}=React;
 const h=React.createElement;
 const T={
-  vi:{title:"TFT Lõi XP — 4 Tộc Khu Vực",sub:"4 tộc Khu Vực → +4 XP / vòng người chơi",xpOn:"✓ +4 XP / vòng — kích hoạt!",xpOff:n=>n+"/4 tộc — +"+(n>=1?2:0)+" XP/vòng",emblems:"Ấn tộc hệ đang có",empfx:"Ấn ",suggs:"Combo rẻ nhất từ bàn hiện tại",need:n=>"Cần thêm "+n+" tộc",done:"✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng đấu người chơi.",panel:n=>"Tướng trên bàn ("+n+")",search:"Tìm tên tướng...",clear:"Xóa tất cả",all:"Tất cả",gold:"g",noSugg:"Chọn tướng để xem gợi ý",goldFilter:"Lọc vàng tối đa",goldAll:"Tất cả",boardTitle:"Đội hình hiện tại",optTitle:"Đội hình đề xuất tối ưu",optTab1:"Từ bàn hiện tại",optTab2:"Tối ưu toàn cục",tooExp:g=>"Không có combo ≤"+g+"g"},
-  en:{title:"TFT XP Augment — 4 Region Traits",sub:"4 unique Region traits → +4 XP per player combat",xpOn:"✓ +4 XP / round — ACTIVE!",xpOff:n=>n+"/4 regions — +"+(n>=1?2:0)+" XP/round",emblems:"Region Emblems on board",empfx:"",suggs:"Cheapest combos from board",need:n=>"Need "+n+" more region"+(n>1?"s":""),done:"✓ XP Augment ACTIVE!\nTeam gains +4 XP each player combat.",panel:n=>"Units on board ("+n+")",search:"Search champion...",clear:"Clear all",all:"All",gold:"g",noSugg:"Select units to see suggestions",goldFilter:"Max gold filter",goldAll:"Any",boardTitle:"Current board",optTitle:"Optimal team suggestions",optTab1:"From current board",optTab2:"Global optimal",tooExp:g=>"No combo within "+g+"g"}
+  vi:{title:"TFT Lõi XP — 4 Tộc Khu Vực",sub:"4 tộc Khu Vực → +4 XP / vòng người chơi",xpOn:"✓ +4 XP / vòng — kích hoạt!",xpOff:n=>n+"/4 tộc — +"+(n>=1?2:0)+" XP/vòng",emblems:"Ấn tộc hệ đang có",empfx:"Ấn ",suggs:"Combo rẻ nhất từ bàn hiện tại",need:n=>"Cần thêm "+n+" tộc",done:"✓ Lõi XP kích hoạt!\nĐội nhận +4 XP mỗi vòng đấu người chơi.",panel:n=>"Tướng trên bàn ("+n+")",search:"Tìm tên tướng...",clear:"Xóa tất cả",all:"Tất cả",gold:"g",noSugg:"Chọn tướng để xem gợi ý",goldFilter:"Lọc vàng tối đa",goldAll:"Tất cả",boardTitle:"Đội hình hiện tại",optTitle:"Đội hình đề xuất tối ưu",optTab1:"Từ bàn hiện tại",optTab2:"Tối ưu toàn cục",tooExp:g=>"Không có combo ≤"+g+"g",sortGold:"Ít vàng nhất",sortChamp:"Ít tướng nhất",champCount:n=>n+" tướng"},
+  en:{title:"TFT XP Augment — 4 Region Traits",sub:"4 unique Region traits → +4 XP per player combat",xpOn:"✓ +4 XP / round — ACTIVE!",xpOff:n=>n+"/4 regions — +"+(n>=1?2:0)+" XP/round",emblems:"Region Emblems on board",empfx:"",suggs:"Cheapest combos from board",need:n=>"Need "+n+" more region"+(n>1?"s":""),done:"✓ XP Augment ACTIVE!\nTeam gains +4 XP each player combat.",panel:n=>"Units on board ("+n+")",search:"Search champion...",clear:"Clear all",all:"All",gold:"g",noSugg:"Select units to see suggestions",goldFilter:"Max gold filter",goldAll:"Any",boardTitle:"Current board",optTitle:"Optimal team suggestions",optTab1:"From current board",optTab2:"Global optimal",tooExp:g=>"No combo within "+g+"g",sortGold:"Min gold",sortChamp:"Min units",champCount:n=>n+" units"}
 };
 const CC=["","c1","c2","c3","c4","c5","","c7"];
 const CB=["","#9ca3af","#4ade80","#60a5fa","#c084fc","#fbbf24","#fbbf24","#f97316"];
@@ -179,13 +179,13 @@ function analyze(sel,emblems,maxG){
   const rc={};
   notActive.forEach(r=>{const already=counts[r.id]||0;const sn=r.min-already;const avail=CHAMPS.filter(c=>c.r.includes(r.id)&&!sel.has(c.id)).sort((a,b)=>a.c-b.c);if(avail.length<sn){rc[r.id]=null;return;}const picks=avail.slice(0,sn);rc[r.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0)};});
   const viable=notActive.filter(r=>rc[r.id]!==null);
-  const suggs=combs(viable,need).map(combo=>{const parts=combo.map(r=>({...rc[r.id],region:r}));const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;return{parts,total};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,6);
+  const suggs=combs(viable,need).map(combo=>{const parts=combo.map(r=>({...rc[r.id],region:r}));const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;const cc=parts.reduce((s,p)=>s+p.picks.length,0);return{parts,total,cc};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,6);
   return{done:false,active,counts,need,suggs};
 }
 function globalOpt(maxG){
   const rc={};REGIONS.forEach(r=>{const avail=CHAMPS.filter(c=>c.r.includes(r.id)).sort((a,b)=>a.c-b.c);if(avail.length<r.min){rc[r.id]=null;return;}const picks=avail.slice(0,r.min);rc[r.id]={picks,cost:picks.reduce((s,p)=>s+p.c,0),region:r};});
   const viable=REGIONS.filter(r=>rc[r.id]!==null);
-  return combs(viable,4).map(combo=>{const parts=combo.map(r=>rc[r.id]);const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;return{parts,total};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,5);
+  return combs(viable,4).map(combo=>{const parts=combo.map(r=>rc[r.id]);const total=parts.reduce((s,p)=>s+p.cost,0);if(maxG<99&&total>maxG)return null;const cc=parts.reduce((s,p)=>s+p.picks.length,0);return{parts,total,cc};}).filter(Boolean).sort((a,b)=>a.total-b.total).slice(0,5);
 }
 function ChampImg({id,size,radius}){
   const[err,setErr]=useState(false);const url=DM[id]?DDR+DM[id]+".png":null;
@@ -228,7 +228,7 @@ function BoardView({sel,counts,active,lang}){
 }
 function App(){
   const[lang,setLang]=useState("vi");const[sel,setSel]=useState(new Set());const[emblems,setEmblems]=useState(new Map());
-  const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);
+  const[filterR,setFilterR]=useState("all");const[search,setSearch]=useState("");const[maxG,setMaxG]=useState(99);const[optTab,setOptTab]=useState(0);const[sortMode,setSortMode]=useState("gold");
   const t=T[lang];
   const result=useMemo(()=>analyze(sel,emblems,maxG),[sel,emblems,maxG]);
   const gopt=useMemo(()=>globalOpt(maxG),[maxG]);
@@ -242,7 +242,7 @@ function App(){
   const clearAll=()=>{setSel(new Set());setEmblems(new Map());};
   const rname=r=>lang==="vi"?r.vi:r.en;
   const GOLDS=[6,8,10,12,15,99];
-  const optRows=optTab===0?(result.done?[]:result.suggs||[]):gopt;
+  const sortRows=rows=>[...rows].sort((a,b)=>sortMode==="champ"?(a.cc-b.cc||a.total-b.total):(a.total-b.total||a.cc-b.cc));const optRows=sortMode==="champ"?(optTab===0?(result.done?[]:sortRows(result.suggs||[])):sortRows(gopt)):(optTab===0?(result.done?[]:result.suggs||[]):gopt);
   return h("div",null,
     h("div",{className:"hdr"},
       h("div",{className:"hdr-l"},h("div",{className:"hdr-icon"},"⚡"),h("div",null,h("div",{className:"hdr-h1"},t.title),h("div",{className:"hdr-sub"},t.sub))),
@@ -259,11 +259,11 @@ function App(){
         h("div",{className:"gf mb10"},h("div",{className:"gf-top"},h("span",{className:"gf-lbl"},t.goldFilter),h("span",{className:"gf-val"},maxG>=99?t.goldAll:"≤"+maxG+"g")),h("div",{className:"gf-btns"},GOLDS.map(g=>h("button",{key:g,className:"gfb"+(maxG===g?" on":""),onClick:()=>setMaxG(g)},g>=99?t.goldAll:"≤"+g+"g")))),
         h("div",{className:"opt-board"},
           h("div",{className:"card-ttl"},t.optTitle),
-          h("div",{className:"opt-tabs"},h("button",{className:"ot"+(optTab===0?" on":""),onClick:()=>setOptTab(0)},t.optTab1),h("button",{className:"ot"+(optTab===1?" on":""),onClick:()=>setOptTab(1)},t.optTab2)),
+          h("div",{className:"opt-tabs"},h("button",{className:"ot"+(optTab===0?" on":""),onClick:()=>setOptTab(0)},t.optTab1),h("button",{className:"ot"+(optTab===1?" on":""),onClick:()=>setOptTab(1)},t.optTab2)),h("div",{className:"opt-tabs",style:{marginBottom:10}},h("button",{className:"ot"+(sortMode==="gold"?" on":""),onClick:()=>setSortMode("gold")},t.sortGold),h("button",{className:"ot"+(sortMode==="champ"?" on":""),onClick:()=>setSortMode("champ")},t.sortChamp)),
           optTab===0&&result.done
             ? h("div",{className:"done-box",style:{fontSize:11,padding:10}},t.done)
             : optRows.length>0
-              ? optRows.map((row,i)=>h("div",{key:i,className:"orow"+(i===0?" top":"")},h("span",{className:"orank"},i===0?"★":i+1),h("div",{className:"opicks"},row.parts.flatMap(p=>p.picks).map(ch=>h(PickChip,{key:ch.id,ch,cls:"opick",imgSize:"16px"}))),h("span",{className:"ototl"},row.total+"g")))
+              ? optRows.map((row,i)=>h("div",{key:i,className:"orow"+(i===0?" top":"")},h("span",{className:"orank"},i===0?"★":i+1),h("div",{className:"opicks"},row.parts.flatMap(p=>p.picks).map(ch=>h(PickChip,{key:ch.id,ch,cls:"opick",imgSize:"16px"}))),h("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},h("span",{className:"ototl"},row.total+"g"),h("span",{style:{fontSize:9,color:"var(--tx3)"}},t.champCount(row.cc)))))
               : h("div",{className:"no-row"},maxG<99?t.tooExp(maxG):t.noSugg)
         )
       ),
